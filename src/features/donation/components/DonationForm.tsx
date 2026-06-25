@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useCreateCheckout } from "../hooks/useCreateCheckout";
 
 interface DonationFormProps {
   campaignId: string;
   currency: string;
+  productId: string;
 }
 
 function formatCurrency(amountInCents: number, currency: string): string {
@@ -38,14 +38,16 @@ function getCurrencySymbol(currency: string): string {
   return symbols[currency] || "$";
 }
 
-export function DonationForm({ campaignId, currency }: DonationFormProps) {
+export function DonationForm({ campaignId, currency, productId }: DonationFormProps) {
   const [amount, setAmount] = useState<number>(1000);
-  const { mutate: createCheckout, isPending } = useCreateCheckout();
+  const [isPending, setIsPending] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (amount >= 100) {
-      createCheckout({ campaignId, amountInCents: amount });
+      setIsPending(true);
+      const metadata = encodeURIComponent(JSON.stringify({ campaignId, amountInCents: String(amount) }));
+      window.location.href = `/api/checkout?products=${productId}&metadata=${metadata}`;
     }
   };
 

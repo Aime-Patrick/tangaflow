@@ -55,6 +55,7 @@ export default function DonatePage({
         <DonationForm
           campaignId={campaignId}
           currency={campaign.currency}
+          productId={process.env.NEXT_PUBLIC_POLAR_DONATION_PRODUCT_ID!}
         />
       </main>
     </div>
