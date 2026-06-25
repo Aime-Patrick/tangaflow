@@ -43,13 +43,20 @@ export default function DonatePage({
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <DonationForm
-        campaignId={campaignId}
-        currency={campaign.currency}
-        raisedAmount={campaign.raisedAmount}
-        targetAmount={campaign.targetAmount}
-      />
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="flex h-14 items-center justify-between px-6">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold tracking-tight text-text-primary">
+            TangaFlow
+          </span>
+        </div>
+      </header>
+      <main className="flex-1 flex items-center justify-center p-4">
+        <DonationForm
+          campaignId={campaignId}
+          currency={campaign.currency}
+        />
+      </main>
     </div>
   );
 }
