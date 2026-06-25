@@ -145,15 +145,13 @@ localStorage should only be used for UI preferences:
 
 ```ts
 {
-  _id: string;
-  name: string;
-  targetAmount: number;
-  raisedAmount: number;
-  currency: string;
+  _id: string;           // sessionKey (auto-generated)
+  name: string;          // event name (user-entered)
+  targetAmount: number;  // in cents
+  raisedAmount: number;  // in cents (updated by webhook)
+  currency: string;      // "USD", "EUR", etc.
   qrEnabled: boolean;
   qrText: string;
-  presentationTitle?: string;
-  presentationFileUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -173,6 +171,8 @@ Example:
 }
 ```
 
+**Note:** PPT files are stored in localStorage (blob URLs), not in MongoDB.
+
 For MVP there will only be ONE campaign per session. Future support for multiple campaigns should remain possible.
 
 ---
@@ -184,15 +184,20 @@ When user uploads first PPT, show event name dialog:
 ```text
 User Action                    UI Response
 ─────────────                 ──────────────────────────────
-Upload first PPT        →     Show EventNameDialog
+Upload first PPT        →     Show Skeleton (16:9)
+                      →     Parse PPTX file
+                      →     Show EventNameDialog
                       →     User enters "Sunday Service"
                       →     Create campaign in MongoDB
-                      →     Save presentationFileUrl
-                      →     Generate QR code
-                      →     Show presentation
+                      →     Save sessionKey to localStorage
+                      →     Fade-in PPT (0.4s animation)
+                      →     Show QR code with donation URL
 
-Upload another PPT      →     No dialog (campaign exists)
-                      →     Just update presentationFileUrl
+Upload another PPT      →     No dialog (sessionKey exists)
+                      →     Show Skeleton
+                      →     Parse PPTX file
+                      →     Fade-in PPT
+                      →     Same QR code, same campaign
 ```
 
 ## EventNameDialog Component
@@ -254,16 +259,58 @@ In Settings sheet, add event name field:
 ```text
 Settings
 ─────────────────
+Theme: [ Light ] [ Dark ]
+
+─────────────────
 Event Name: [ Sunday Service ]
 
-Target Amount: [ 10000 ]
-
+─────────────────
 Currency: [ USD ▼ ]
+Target Amount (cents): [ 10000 ]
 
-[ Save ]
+─────────────────
+Payment Method: [ Polar ▼ ]
+- Polar (Card payments)
+- Mobile Money (M-Pesa, MTN)
+- Bank Transfer
+
+Donation URL (QR Code): [ https://.../donate/a1b2c3d4e5f6 ]
+(read-only for Polar, editable for MoMo/Bank)
+
+[ Save Settings ]
 ```
 
-Changes save to MongoDB immediately.
+## Payment Methods
+
+| Method | QR Content | User Input |
+|--------|------------|------------|
+| Polar | Donation URL (auto) | None |
+| Mobile Money | USSD code / phone | User enters |
+| Bank Transfer | Bank details | User enters |
+
+Changes save to MongoDB on explicit Save button click.
+
+---
+
+# File Storage
+
+**PPT files stored in localStorage** (blob URLs), not on server.
+
+```ts
+// When user uploads PPT
+const fileUrl = URL.createObjectURL(file);
+localStorage.setItem("presentationFile", fileUrl);
+localStorage.setItem("presentationFileName", file.name);
+```
+
+## Why localStorage for Files?
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| localStorage | No server, instant, free | 5-10MB limit, device-only |
+| Server upload | Persistent, shareable | Needs storage service, costs |
+
+**MVP choice:** localStorage is simplest.
 
 ---
 
@@ -334,6 +381,32 @@ Validation:
 
 * Minimum donation = $1
 * Amount must be positive
+
+---
+
+# Loading Animation
+
+## Skeleton Loader
+
+When PPT is parsing, show a 16:9 skeleton rectangle:
+
+```tsx
+<Skeleton className="w-full shadow-xl" style={{ aspectRatio: "16/9" }} />
+```
+
+## PPT Transition
+
+After parsing completes (300ms delay):
+
+1. Skeleton disappears
+2. PPT fades in with scale animation (0.4s)
+
+```css
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+```
 
 ---
 

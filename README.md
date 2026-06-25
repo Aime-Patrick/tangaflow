@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TangaFlow
+
+A presentation and fundraising platform built with Next.js. Display PowerPoint presentations with real-time QR code donations.
+
+## Features
+
+- **PPT Viewer** - Upload and present PowerPoint files
+- **QR Code Donations** - Audience scans QR to donate
+- **Real-time Progress** - Progress bar updates as donations come in
+- **Multiple Payment Methods** - Polar (cards), Mobile Money, Bank Transfer
+- **Session-based Campaigns** - Auto-generated campaign IDs, hidden from users
+
+## Tech Stack
+
+- Next.js 16 (Turbopack)
+- TypeScript
+- Tailwind CSS v4
+- MongoDB (Mongoose)
+- Polar Payments
+- TanStack Query v5
+- Framer Motion
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- MongoDB Atlas account (free tier)
+- Polar account (for payments)
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# Clone the repository
+git clone <repo-url>
+
+# Install dependencies
+pnpm install
+
+# Copy environment variables
+cp .env.example .env
+
+# Add your MongoDB URI and Polar credentials to .env
+
+# Run development server
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+# MongoDB
+MONGODB_URI=mongodb+srv://...
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Polar Payments
+POLAR_ACCESS_TOKEN=
+POLAR_WEBHOOK_SECRET=
+POLAR_DONATION_PRODUCT_ID=
 
-## Learn More
+# App
+SUCCESS_URL=http://localhost:3000/donate/success
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── campaigns/        # Campaign CRUD
+│   │   ├── checkout/         # Polar checkout
+│   │   └── webhook/          # Polar webhook
+│   └── donate/
+│       ├── [campaignId]/     # Donation page
+│       └── success/          # Payment success
+├── components/
+│   └── workspace/
+│       ├── PresentationWorkspace.tsx  # Main workspace
+│       ├── PresentationPlayer.tsx     # PPT viewer
+│       ├── QRCodeDisplay.tsx          # QR code
+│       ├── SettingsDialog.tsx         # Settings sheet
+│       └── EventNameDialog.tsx        # First-time dialog
+├── features/
+│   ├── campaign/             # Campaign module
+│   └── donation/             # Donation module
+├── lib/
+│   ├── mongodb.ts            # DB connection
+│   └── utils.ts              # Utilities
+└── models/
+    └── Campaign.ts           # Mongoose schema
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## How It Works
 
-## Deploy on Vercel
+1. **Upload PPT** - User drags/drops a PowerPoint file
+2. **Enter Event Name** - First-time dialog asks for event name
+3. **Campaign Created** - Auto-generated session key stored in MongoDB
+4. **QR Code Shown** - Points to `/donate/{sessionKey}`
+5. **Audience Donates** - Scans QR, enters amount, pays via Polar
+6. **Progress Updates** - Webhook updates MongoDB, polling refreshes UI
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## API Routes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/campaigns` | POST | Create campaign |
+| `/api/campaigns/[id]` | GET | Get campaign |
+| `/api/campaigns/[id]` | PATCH | Update campaign |
+| `/api/checkout` | POST | Create Polar checkout |
+| `/api/webhook` | POST | Polar webhook handler |
+
+## Testing Payments
+
+1. Create a product in Polar Dashboard (custom price, $1 minimum)
+2. Add `POLAR_DONATION_PRODUCT_ID` to `.env`
+3. Use ngrok for webhook testing: `ngrok http 3000`
+4. Add ngrok URL to Polar webhook settings
+
+## License
+
+MIT
