@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+import { Polar } from "@polar-sh/sdk";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Campaign } from "@/models/Campaign";
+
+const polar = new Polar({
+  accessToken: process.env.POLAR_ACCESS_TOKEN!,
+});
 
 export async function POST(request: Request) {
   try {
@@ -32,16 +37,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const polar = await import("@polar-sh/sdk").then((m) => m.Polar);
-
-    const client = new polar({
-      accessToken: process.env.POLAR_ACCESS_TOKEN!,
-    });
-
-    const checkout = await client.checkouts.create({
+    const checkout = await polar.checkouts.create({
       products: [process.env.POLAR_DONATION_PRODUCT_ID!],
       amount: amountInCents,
-      currency: campaign.currency.toLowerCase() as "usd" | "eur" | "gbp",
       successUrl: `${process.env.SUCCESS_URL}?campaignId=${campaignId}`,
       metadata: {
         campaignId,
