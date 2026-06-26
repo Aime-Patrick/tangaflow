@@ -35,7 +35,6 @@ async function createPolarCheckoutSession(
       body: JSON.stringify({
         products: [productId],
         metadata: { campaignId },
-        embed_origin: typeof window !== "undefined" ? window.location.origin : "",
       }),
     });
 
