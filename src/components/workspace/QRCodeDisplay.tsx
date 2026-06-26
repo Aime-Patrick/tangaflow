@@ -3,6 +3,7 @@
 import React from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useUIStore } from "@/stores/uiStore";
+import { formatCurrency } from "@/lib/utils";
 
 interface QRCodeDisplayProps {
   content: string;
@@ -54,8 +55,7 @@ export function QRCodeDisplay({
         </div>
         <div className="flex items-center justify-between px-5 pt-2">
           <h3 className="text-sm text-text-primary">
-            {symbol}
-            {raisedAmount.toLocaleString()}
+            {formatCurrency(raisedAmount, currency)}
           </h3>
         </div>
       </div>

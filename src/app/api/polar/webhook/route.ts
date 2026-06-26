@@ -25,18 +25,19 @@ export async function POST(request: NextRequest) {
     const rawMeta = (order as unknown as { metadata?: Record<string, string> }).metadata;
     const campaignId = rawMeta?.campaignId || rawMeta?.campaignid;
 
-    // amount is in cents from the order.paid event
-    const amountInCents = order.metadata?.amount ?? 0;
+    // amount is in cents from Polar, convert to dollars
+    const amountInCents = Number(order.metadata?.amount ?? 0);
+    const amountInDollars = amountInCents / 100;
 
-    if (!campaignId || !amountInCents) {
-      console.error("Missing campaignId or amount in webhook", { campaignId, amountInCents });
+    if (!campaignId || !amountInDollars) {
+      console.error("Missing campaignId or amount in webhook", { campaignId, amountInDollars });
       return NextResponse.json({ received: true });
     }
 
     await connectToDatabase();
     const campaign = await Campaign.findByIdAndUpdate(
       campaignId,
-      { $inc: { raisedAmount: amountInCents } },
+      { $inc: { raisedAmount: amountInDollars } },
       { new: true }
     );
 

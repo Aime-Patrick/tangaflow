@@ -140,7 +140,7 @@ export function SettingsDialog({
           {/* Target Amount */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
-              Target Amount (cents)
+              Target Amount ($)
             </label>
             <input
               type="number"

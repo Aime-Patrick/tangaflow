@@ -25,7 +25,7 @@ const CampaignSchema = new Schema(
     targetAmount: {
       type: Number,
       required: true,
-      min: 100,
+      min: 1,
     },
     raisedAmount: {
       type: Number,

@@ -5,7 +5,7 @@ import { z } from "zod";
 
 const updateCampaignSchema = z.object({
   name: z.string().min(1, "Name cannot be empty").trim().optional(),
-  targetAmount: z.number().int().min(100, "Target amount must be at least 100 cents ($1)").optional(),
+  targetAmount: z.number().min(1, "Target amount must be at least $1").optional(),
   currency: z.enum(["USD", "EUR", "GBP", "JPY", "KRW", "INR", "BRL", "RWF", "NGN", "ZAR", "KES", "GHS"]).optional(),
 });
 
