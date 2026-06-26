@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PptxViewer } from "@aiden0z/pptx-renderer";
-import { savePPTX, loadPPTX, listPPTX, deletePPTX } from "@/lib/pptxStorage";
+import { savePPTX, savePPTXCloud, loadPPTX, loadPPTXFromCloud, listPPTX, deletePPTX, type PPTXMeta } from "@/lib/pptxStorage";
 import { CampaignProgressBar } from "./CampaignProgressBar";
 import { toast } from "sonner";
 
@@ -221,7 +221,36 @@ export function PresentationPlayer({
           );
         }
       } else {
-        toast.warning("File too large for local storage — session only.");
+        // Upload to Cloudinary
+        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        const uploadPreset = "tangaflow_unsigned";
+        const folder = "tangaflow/pptx";
+        if (cloudName) {
+          setUploadProgress(35);
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("upload_preset", uploadPreset);
+          formData.append("folder", folder);
+          formData.append("resource_type", "raw");
+          try {
+            const res = await fetch(
+              `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`,
+              { method: "POST", body: formData }
+            );
+            if (res.ok) {
+              const data = await res.json();
+              savePPTXCloud(file.name, file.size, data.secure_url);
+              setSavedFiles(listPPTX());
+              toast.success("File saved to cloud storage.");
+            } else {
+              toast.warning("Cloud upload failed — session only.");
+            }
+          } catch {
+            toast.warning("Cloud upload failed — session only.");
+          }
+        } else {
+          toast.warning("File too large for local storage — session only.");
+        }
       }
 
       setUploadProgress(50);
@@ -284,8 +313,22 @@ export function PresentationPlayer({
   };
 
   const handleRestoreFile = async (fileName: string) => {
-    const buffer = loadPPTX(fileName);
-    if (!buffer) return;
+    // Check if it's a cloud file
+    const meta = listPPTX().find((f) => f.fileName === fileName);
+    let buffer: ArrayBuffer | null = null;
+
+    if (meta?.cloudUrl) {
+      toast.info("Downloading from cloud...");
+      buffer = await loadPPTXFromCloud(meta.cloudUrl);
+      if (!buffer) {
+        toast.error("Failed to download from cloud.");
+        return;
+      }
+    } else {
+      buffer = loadPPTX(fileName);
+      if (!buffer) return;
+    }
+
     const file = new File([buffer], fileName, {
       type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     });

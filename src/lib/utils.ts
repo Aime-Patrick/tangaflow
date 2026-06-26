@@ -5,14 +5,29 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number, currency: string = "USD"): string {
+export function formatCurrency(amountInCents: number, currency: string = "USD"): string {
+  const amount = amountInCents / 100;
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency,
+    currency: currency.toUpperCase(),
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(amount);
 }
+
+export function getCurrencySymbol(currency: string): string {
+  return (
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency.toUpperCase(),
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })
+      .formatToParts(0)
+      .find((p) => p.type === "currency")?.value ?? currency.toUpperCase()
+  );
+}
+
 
 export function formatNumber(num: number): string {
   return new Intl.NumberFormat("en-US").format(num);

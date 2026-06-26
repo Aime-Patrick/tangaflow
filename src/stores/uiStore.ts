@@ -29,13 +29,17 @@ export const useUIStore = create<UIState>((set) => ({
   openSheet: (id) => set({ activeSheet: id }),
   closeSheet: () => set({ activeSheet: null }),
   setTheme: (theme) => {
-    localStorage.setItem("tangaflow-theme", theme);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("tangaflow-theme", theme);
+    }
     set({ theme });
   },
   toggleTheme: () =>
     set((state) => {
       const next: Theme = state.theme === "dark" ? "light" : "dark";
-      localStorage.setItem("tangaflow-theme", next);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("tangaflow-theme", next);
+      }
       return { theme: next };
     }),
 }));

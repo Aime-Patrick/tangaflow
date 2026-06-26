@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 import { usePresentation } from "../hooks/usePresentation";
 import { useDeletePresentation } from "../hooks/useDeletePresentation";
@@ -123,12 +124,14 @@ export function PresentationDetailSheet({
             <Separator className="my-6 bg-border-subtle" />
 
             {/* Preview */}
-            <div className="mb-6 aspect-video rounded-xl bg-bg-elevated overflow-hidden">
+            <div className="relative mb-6 aspect-video rounded-xl bg-bg-elevated overflow-hidden">
               {presentation.thumbnailUrl ? (
-                <img
+                <Image
                   src={presentation.thumbnailUrl}
                   alt={presentation.title}
-                  className="h-full w-full object-cover"
+                  fill
+                  unoptimized
+                  className="object-cover"
                 />
               ) : (
                 <div className="flex h-full items-center justify-center">

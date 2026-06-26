@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Campaign } from "@/models/Campaign";
+import { z } from "zod";
+
+const updateCampaignSchema = z.object({
+  name: z.string().min(1, "Name cannot be empty").trim().optional(),
+  targetAmount: z.number().int().min(100, "Target amount must be at least 100 cents ($1)").optional(),
+  currency: z.enum(["USD", "EUR", "GBP", "JPY", "KRW", "INR", "BRL", "RWF", "NGN", "ZAR", "KES", "GHS"]).optional(),
+});
 
 export async function GET(
   request: Request,
@@ -38,20 +45,15 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const allowedFields = [
-      "name",
-      "targetAmount",
-      "currency",
-      "qrEnabled",
-      "qrText",
-    ];
-
-    const updates: Record<string, unknown> = {};
-    for (const field of allowedFields) {
-      if (field in body) {
-        updates[field] = body[field];
-      }
+    const parsed = updateCampaignSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0].message },
+        { status: 400 }
+      );
     }
+
+    const updates = parsed.data;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(

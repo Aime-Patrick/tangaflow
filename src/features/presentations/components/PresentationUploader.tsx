@@ -78,21 +78,23 @@ export function PresentationUploader({ open, onOpenChange }: PresentationUploade
   const handleSubmit = async () => {
     if (!file || !form.title) return;
 
-    // In a real app, you'd upload to Cloudinary first
-    // For now, we'll simulate the upload
-    const mockFileUrl = `https://cloudinary.com/uploads/${file.name}`;
-    const mockThumbnailUrl = `https://cloudinary.com/thumbnails/${file.name}`;
+    // TODO: Implement actual file upload when storage backend is added.
+    // For now we store presentation metadata with a local object URL for preview.
+    const localPreviewUrl = URL.createObjectURL(file);
 
     await createPresentation.mutateAsync({
       title: form.title,
       description: form.description,
       category: form.category,
       visibility: form.visibility as "PUBLIC" | "PRIVATE",
-      fileUrl: mockFileUrl,
+      fileUrl: localPreviewUrl,
       fileName: file.name,
       fileSize: file.size,
-      thumbnailUrl: mockThumbnailUrl,
+      thumbnailUrl: undefined,
     });
+
+    // Revoke the object URL after it has been stored in state
+    URL.revokeObjectURL(localPreviewUrl);
 
     // Reset and close
     setFile(null);

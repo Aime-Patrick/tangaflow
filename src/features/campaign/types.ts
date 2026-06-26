@@ -4,8 +4,7 @@ export interface Campaign {
   targetAmount: number;
   raisedAmount: number;
   currency: string;
-  qrEnabled: boolean;
-  qrText: string;
+  checkoutUrl: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,6 +19,4 @@ export interface UpdateCampaignInput {
   name?: string;
   targetAmount?: number;
   currency?: string;
-  qrEnabled?: boolean;
-  qrText?: string;
 }

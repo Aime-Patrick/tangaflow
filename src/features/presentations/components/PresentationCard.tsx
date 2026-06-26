@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 import { cn, formatRelativeTime } from "@/lib/utils";
 import type { Presentation } from "../types";
@@ -49,10 +50,12 @@ export function PresentationCard({
       {/* Thumbnail */}
       <div className="relative aspect-video overflow-hidden rounded-t-xl bg-bg-elevated">
         {presentation.thumbnailUrl ? (
-          <img
+          <Image
             src={presentation.thumbnailUrl}
             alt={presentation.title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            fill
+            unoptimized
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full items-center justify-center">

@@ -6,8 +6,7 @@ export interface ICampaign {
   targetAmount: number;
   raisedAmount: number;
   currency: string;
-  qrEnabled: boolean;
-  qrText: string;
+  checkoutUrl: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,13 +38,9 @@ const CampaignSchema = new Schema(
       default: "USD",
       enum: ["USD", "EUR", "GBP", "JPY", "KRW", "INR", "BRL", "RWF", "NGN", "ZAR", "KES", "GHS"],
     },
-    qrEnabled: {
-      type: Boolean,
-      default: true,
-    },
-    qrText: {
+    checkoutUrl: {
       type: String,
-      default: "Scan to Donate",
+      default: "",
     },
   },
   {

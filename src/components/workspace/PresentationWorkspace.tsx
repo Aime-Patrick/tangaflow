@@ -22,6 +22,13 @@ function getSessionKey(): string | null {
   return localStorage.getItem("tangaflow-session-key");
 }
 
+interface FundraisingData {
+  targetAmount: number;
+  raisedAmount: number;
+  currency: string;
+  name: string;
+}
+
 export function PresentationWorkspace() {
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -29,8 +36,6 @@ export function PresentationWorkspace() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isPptLoaded, setIsPptLoaded] = useState(false);
   const [eventNameDialogOpen, setEventNameDialogOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("polar");
-  const [customQrContent, setCustomQrContent] = useState("");
 
   const [sessionKey, setSessionKeyState] = useState<string | null>(getSessionKey);
 
@@ -40,6 +45,29 @@ export function PresentationWorkspace() {
 
   const createCampaign = useCreateCampaign();
   const updateCampaign = useUpdateCampaign({ campaignId: sessionKey ?? "" });
+
+  // Poll fundraising data every 5 seconds
+  const [fundraising, setFundraising] = useState<FundraisingData | null>(null);
+
+  useEffect(() => {
+    if (!sessionKey) return;
+
+    const fetchFundraising = async () => {
+      try {
+        const res = await fetch(`/api/fundraising?campaignId=${sessionKey}`);
+        if (res.ok) {
+          const data = await res.json();
+          setFundraising(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch fundraising data:", err);
+      }
+    };
+
+    fetchFundraising();
+    const interval = setInterval(fetchFundraising, 5000);
+    return () => clearInterval(interval);
+  }, [sessionKey]);
 
   const [layoutPreset, setLayoutPreset] = useState<LayoutPreset>(() => {
     if (typeof window !== "undefined") {
@@ -119,6 +147,13 @@ export function PresentationWorkspace() {
     }
   }, [sessionKey]);
 
+  const handleNewEvent = useCallback(() => {
+    localStorage.removeItem("tangaflow-session-key");
+    setSessionKeyState(null);
+    setFundraising(null);
+    setEventNameDialogOpen(true);
+  }, []);
+
   const handleEventNameSubmit = useCallback(
     (name: string) => {
       createCampaign.mutate(
@@ -161,36 +196,29 @@ export function PresentationWorkspace() {
     [sessionKey, debouncedUpdate]
   );
 
-  const handleQrTextChange = useCallback(
-    (value: string) => {
-      if (sessionKey) {
-        debouncedUpdate(sessionKey, { qrText: value });
-      }
-    },
-    [sessionKey, debouncedUpdate]
-  );
-
   const handleSaveSettings = useCallback(() => {
     if (sessionKey) {
       updateCampaign.mutate({
         name: campaign?.name,
         targetAmount: campaign?.targetAmount,
         currency: campaign?.currency,
-        qrText: campaign?.qrText,
       });
     }
   }, [sessionKey, updateCampaign, campaign]);
 
-  const donationUrl = sessionKey
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/donate/${sessionKey}`
-    : "";
+  // Polar Checkout URL from campaign
+  const polarCheckoutUrl = campaign?.checkoutUrl || "";
 
   const showPanels = sessionKey !== null && isPptLoaded;
+  const raisedAmount = fundraising?.raisedAmount ?? campaign?.raisedAmount ?? 0;
+  const targetAmount = fundraising?.targetAmount ?? campaign?.targetAmount ?? 10000;
+  const currency = fundraising?.currency ?? campaign?.currency ?? "USD";
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-bg-base text-text-primary">
       <WorkspaceHeader
         onSettingsOpen={() => setSettingsOpen(true)}
+        onNewEvent={handleNewEvent}
         layoutPreset={layoutPreset}
         onLayoutChange={handlePreset}
         isPptLoaded={isPptLoaded}
@@ -211,15 +239,11 @@ export function PresentationWorkspace() {
             debouncedUpdate(sessionKey, { name: value });
           }
         }}
-        targetAmount={campaign?.targetAmount ?? 10000}
+        targetAmount={targetAmount}
         onTargetChange={handleTargetChange}
-        currency={campaign?.currency ?? "USD"}
+        currency={currency}
         onCurrencyChange={handleCurrencyChange}
-        paymentMethod={paymentMethod}
-        onPaymentMethodChange={setPaymentMethod}
-        donationUrl={donationUrl}
-        qrContent={customQrContent}
-        onQrContentChange={setCustomQrContent}
+        polarCheckoutUrl={polarCheckoutUrl}
         onSave={handleSaveSettings}
         isSaving={updateCampaign.isPending}
       />
@@ -246,9 +270,9 @@ export function PresentationWorkspace() {
               setIsPlaying={setIsPlaying}
               isFullscreen={isFullscreen}
               setIsFullscreen={setIsFullscreen}
-              raisedAmount={campaign?.raisedAmount ?? 0}
-              targetAmount={campaign?.targetAmount ?? 10000}
-              currency={campaign?.currency ?? "USD"}
+              raisedAmount={raisedAmount}
+              targetAmount={targetAmount}
+              currency={currency}
               onLoadedChange={handlePptLoaded}
             />
           </div>
@@ -273,9 +297,9 @@ export function PresentationWorkspace() {
                 className={`h-full overflow-hidden ${isDragging ? "" : "transition-[flex] duration-200"}`}
               >
                 <QRCodeDisplay
-                  content={paymentMethod === "polar" ? donationUrl : customQrContent}
-                  raisedAmount={campaign?.raisedAmount ?? 0}
-                  currency={campaign?.currency ?? "USD"}
+                  content={polarCheckoutUrl}
+                  raisedAmount={raisedAmount}
+                  currency={currency}
                 />
               </motion.div>
             )}

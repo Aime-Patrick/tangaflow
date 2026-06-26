@@ -19,10 +19,11 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
   return bytes.buffer;
 }
 
-interface PPTXMeta {
+export interface PPTXMeta {
   fileName: string;
   size: number;
   savedAt: string;
+  cloudUrl?: string;
 }
 
 function getIndex(): PPTXMeta[] {
@@ -35,10 +36,12 @@ function getIndex(): PPTXMeta[] {
 }
 
 function setIndex(index: PPTXMeta[]) {
+  if (typeof window === "undefined") return;
   localStorage.setItem(INDEX_KEY, JSON.stringify(index));
 }
 
 export function savePPTX(fileName: string, arrayBuffer: ArrayBuffer): void {
+  if (typeof window === "undefined") return;
   const base64 = arrayBufferToBase64(arrayBuffer);
   localStorage.setItem(STORAGE_PREFIX + fileName, base64);
 
@@ -47,10 +50,28 @@ export function savePPTX(fileName: string, arrayBuffer: ArrayBuffer): void {
   setIndex(index);
 }
 
+export function savePPTXCloud(fileName: string, size: number, cloudUrl: string): void {
+  if (typeof window === "undefined") return;
+  const index = getIndex().filter((e) => e.fileName !== fileName);
+  index.push({ fileName, size, savedAt: new Date().toISOString(), cloudUrl });
+  setIndex(index);
+}
+
 export function loadPPTX(fileName: string): ArrayBuffer | null {
+  if (typeof window === "undefined") return null;
   const base64 = localStorage.getItem(STORAGE_PREFIX + fileName);
   if (!base64) return null;
   return base64ToArrayBuffer(base64);
+}
+
+export async function loadPPTXFromCloud(cloudUrl: string): Promise<ArrayBuffer | null> {
+  try {
+    const res = await fetch(cloudUrl);
+    if (!res.ok) return null;
+    return await res.arrayBuffer();
+  } catch {
+    return null;
+  }
 }
 
 export function listPPTX(): PPTXMeta[] {
@@ -58,11 +79,13 @@ export function listPPTX(): PPTXMeta[] {
 }
 
 export function deletePPTX(fileName: string): void {
+  if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_PREFIX + fileName);
   setIndex(getIndex().filter((e) => e.fileName !== fileName));
 }
 
 export function getPPTXSize(fileName: string): number {
+  if (typeof window === "undefined") return 0;
   const base64 = localStorage.getItem(STORAGE_PREFIX + fileName);
   if (!base64) return 0;
   return Math.round((base64.length * 3) / 4);

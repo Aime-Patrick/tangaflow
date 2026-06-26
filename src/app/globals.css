@@ -286,7 +286,7 @@ body {
   color: var(--text-primary);
   font-family: 'Google Sans', system-ui, -apple-system, sans-serif;
   font-optical-sizing: auto;
-  font-weight: 600;
+  font-weight: 400;
   font-size: 14px;
   line-height: 20px;
   -webkit-font-smoothing: antialiased;

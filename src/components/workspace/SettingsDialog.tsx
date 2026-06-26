@@ -32,12 +32,6 @@ const CURRENCIES = [
   { code: "GHS", name: "Ghanaian Cedi", symbol: "GH₵" },
 ];
 
-const PAYMENT_METHODS = [
-  { id: "polar", name: "Polar", description: "Card payments via Polar" },
-  { id: "momo", name: "Mobile Money", description: "M-Pesa, MTN, etc." },
-  { id: "bank", name: "Bank Transfer", description: "Manual bank transfer" },
-];
-
 function ThemeButton({ label, value }: { label: string; value: "light" | "dark" }) {
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
@@ -66,11 +60,7 @@ interface SettingsDialogProps {
   onTargetChange: (value: number) => void;
   currency: string;
   onCurrencyChange: (value: string) => void;
-  paymentMethod: string;
-  onPaymentMethodChange: (value: string) => void;
-  donationUrl: string;
-  qrContent: string;
-  onQrContentChange: (value: string) => void;
+  polarCheckoutUrl: string;
   onSave: () => void;
   isSaving?: boolean;
 }
@@ -84,15 +74,10 @@ export function SettingsDialog({
   onTargetChange,
   currency,
   onCurrencyChange,
-  paymentMethod,
-  onPaymentMethodChange,
-  donationUrl,
-  qrContent,
-  onQrContentChange,
+  polarCheckoutUrl,
   onSave,
   isSaving,
 }: SettingsDialogProps) {
-  const isPolar = paymentMethod === "polar";
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="bg-bg-base border-border-subtle w-80">
@@ -113,7 +98,6 @@ export function SettingsDialog({
             </div>
           </div>
 
-          {/* Divider */}
           <div className="border-t border-border-subtle" />
 
           {/* Event Name */}
@@ -126,14 +110,13 @@ export function SettingsDialog({
               value={eventName}
               onChange={(e) => onEventNameChange(e.target.value)}
               placeholder="e.g., Sunday Service"
-              className="w-full h-8  border border-border-default bg-bg-elevated px-2.5 text-xs font-semibold text-text-primary outline-none focus:ring-2 focus:ring-accent-primary/50"
+              className="w-full h-8 border border-border-default bg-bg-elevated px-2.5 text-xs font-semibold text-text-primary outline-none focus:ring-2 focus:ring-accent-primary/50"
             />
           </div>
 
-          {/* Divider */}
           <div className="border-t border-border-subtle" />
 
-          {/* Campaign */}
+          {/* Currency */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
               Currency
@@ -154,6 +137,7 @@ export function SettingsDialog({
             </Select>
           </div>
 
+          {/* Target Amount */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
               Target Amount (cents)
@@ -162,68 +146,28 @@ export function SettingsDialog({
               type="number"
               value={targetAmount}
               onChange={(e) => onTargetChange(Number(e.target.value))}
-              className="w-full h-8  border border-border-default bg-bg-elevated px-2.5 text-xs font-semibold text-text-primary outline-none focus:ring-2 focus:ring-accent-primary/50"
+              className="w-full h-8 border border-border-default bg-bg-elevated px-2.5 text-xs font-semibold text-text-primary outline-none focus:ring-2 focus:ring-accent-primary/50"
             />
           </div>
 
-          {/* Divider */}
           <div className="border-t border-border-subtle" />
 
-          {/* Payment Method */}
+          {/* Polar Checkout URL */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
-              Payment Method
+              Polar Checkout URL (QR Code)
             </label>
-            <Select value={paymentMethod} onValueChange={(v) => v && onPaymentMethodChange(v)}>
-              <SelectTrigger className="w-full h-8 bg-bg-elevated border-border-default text-text-primary text-xs font-semibold">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PAYMENT_METHODS.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    <span className="text-xs font-semibold">{m.name}</span>
-                    <span className="text-[10px] text-text-muted">{m.description}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <input
+              type="text"
+              value={polarCheckoutUrl}
+              readOnly
+              className="w-full h-8 border border-border-default bg-bg-muted px-2.5 text-xs font-mono text-text-muted cursor-not-allowed"
+            />
+            <p className="text-[10px] text-text-muted">
+              Donors scan the QR to pay via Polar
+            </p>
           </div>
 
-          {/* Donation URL / QR Content */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
-              {isPolar ? "Donation URL (QR Code)" : "QR Content"}
-            </label>
-            {isPolar ? (
-              <input
-                type="text"
-                value={donationUrl}
-                readOnly
-                className="w-full h-8  border border-border-default bg-bg-muted px-2.5 text-xs font-mono text-text-muted cursor-not-allowed"
-              />
-            ) : (
-              <>
-                <input
-                  type="text"
-                  value={qrContent}
-                  onChange={(e) => onQrContentChange(e.target.value)}
-                  placeholder={
-                    paymentMethod === "momo"
-                      ? "*123*1*1*0700000000#"
-                      : "Bank: ABC Bank, Acc: 12345678"
-                  }
-                  className="w-full h-8  border border-border-default bg-bg-elevated px-2.5 text-xs font-semibold text-text-primary outline-none focus:ring-2 focus:ring-accent-primary/50"
-                />
-                <p className="text-[10px] text-text-muted">
-                  {paymentMethod === "momo"
-                    ? "Enter USSD code or phone number"
-                    : "Enter bank details or payment info"}
-                </p>
-              </>
-            )}
-          </div>
-
-          {/* Divider */}
           <div className="border-t border-border-subtle" />
 
           {/* Save Button */}

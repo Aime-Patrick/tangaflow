@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Presentation, Settings, Maximize2, Minimize2 } from "lucide-react";
+import { Presentation, Settings, Maximize2, Minimize2, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,12 +15,13 @@ type LayoutPreset = "default" | "focus" | null;
 
 interface WorkspaceHeaderProps {
   onSettingsOpen?: () => void;
+  onNewEvent?: () => void;
   layoutPreset?: LayoutPreset;
   onLayoutChange?: (preset: LayoutPreset) => void;
   isPptLoaded?: boolean;
 }
 
-export function WorkspaceHeader({ onSettingsOpen, layoutPreset, onLayoutChange, isPptLoaded }: WorkspaceHeaderProps) {
+export function WorkspaceHeader({ onSettingsOpen, onNewEvent, layoutPreset, onLayoutChange, isPptLoaded }: WorkspaceHeaderProps) {
   const isDefault = layoutPreset === "default" || layoutPreset === null;
 
   const toggleLayout = () => {
@@ -39,6 +40,23 @@ export function WorkspaceHeader({ onSettingsOpen, layoutPreset, onLayoutChange, 
         </div>
 
         <div className="flex items-center gap-1">
+          {onNewEvent && isPptLoaded && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={onNewEvent}
+                    className="text-text-muted hover:text-text-primary"
+                  />
+                }
+              >
+                <Plus className="h-4 w-4" />
+              </TooltipTrigger>
+              <TooltipContent>New Event</TooltipContent>
+            </Tooltip>
+          )}
           {onLayoutChange && isPptLoaded && (
             <Tooltip>
               <TooltipTrigger
