@@ -42,6 +42,11 @@ const CampaignSchema = new Schema(
       type: String,
       default: "",
     },
+    barcodeType: {
+      type: String,
+      enum: ["qr", "zerocode"],
+      default: "qr",
+    },
   },
   {
     timestamps: true,

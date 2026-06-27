@@ -5,6 +5,7 @@ export interface Campaign {
   raisedAmount: number;
   currency: string;
   checkoutUrl: string;
+  barcodeType: "qr" | "zerocode";
   createdAt: string;
   updatedAt: string;
 }
@@ -19,4 +20,5 @@ export interface UpdateCampaignInput {
   name?: string;
   targetAmount?: number;
   currency?: string;
+  barcodeType?: "qr" | "zerocode";
 }

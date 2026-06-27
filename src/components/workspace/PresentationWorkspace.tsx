@@ -36,13 +36,14 @@ export function PresentationWorkspace() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isPptLoaded, setIsPptLoaded] = useState(false);
   const [eventNameDialogOpen, setEventNameDialogOpen] = useState(false);
-  const [codeType, setCodeType] = useState<"qr" | "zerocode">("qr");
 
   const [sessionKey, setSessionKeyState] = useState<string | null>(getSessionKey);
 
   const { data: campaign, isLoading: campaignLoading } = useCampaign({
     id: sessionKey,
   });
+
+  const codeType = campaign?.barcodeType ?? "qr";
 
   const createCampaign = useCreateCampaign();
   const updateCampaign = useUpdateCampaign({ campaignId: sessionKey ?? "" });
@@ -197,6 +198,15 @@ export function PresentationWorkspace() {
     [sessionKey, debouncedUpdate]
   );
 
+  const handleBarcodeTypeChange = useCallback(
+    (value: "qr" | "zerocode") => {
+      if (sessionKey) {
+        debouncedUpdate(sessionKey, { barcodeType: value });
+      }
+    },
+    [sessionKey, debouncedUpdate]
+  );
+
   const handleSaveSettings = useCallback(() => {
     if (sessionKey) {
       updateCampaign.mutate({
@@ -246,7 +256,7 @@ export function PresentationWorkspace() {
         onCurrencyChange={handleCurrencyChange}
         polarCheckoutUrl={polarCheckoutUrl}
         codeType={codeType}
-        onCodeTypeChange={setCodeType}
+        onCodeTypeChange={handleBarcodeTypeChange}
         onSave={handleSaveSettings}
         isSaving={updateCampaign.isPending}
       />

@@ -161,28 +161,15 @@ export function SettingsDialog({
             <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
               Barcode Type
             </label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onCodeTypeChange("qr")}
-                className={`flex-1 h-8 border text-xs font-semibold transition-colors ${
-                  codeType === "qr"
-                    ? "border-accent-primary bg-accent-primary text-bg-base"
-                    : "border-border-default bg-bg-elevated text-text-secondary hover:text-text-primary hover:border-border-strong"
-                }`}
-              >
-                QR Code
-              </button>
-              <button
-                onClick={() => onCodeTypeChange("zerocode")}
-                className={`flex-1 h-8 border text-xs font-semibold transition-colors ${
-                  codeType === "zerocode"
-                    ? "border-accent-primary bg-accent-primary text-bg-base"
-                    : "border-border-default bg-bg-elevated text-text-secondary hover:text-text-primary hover:border-border-strong"
-                }`}
-              >
-                00Code
-              </button>
-            </div>
+            <Select value={codeType} onValueChange={(v) => v && onCodeTypeChange(v as "qr" | "zerocode")}>
+              <SelectTrigger className="w-full h-8 bg-bg-elevated border-border-default text-text-primary text-xs font-semibold">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="qr">QR Code</SelectItem>
+                <SelectItem value="zerocode">00Code (Circular)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Polar Checkout URL */}

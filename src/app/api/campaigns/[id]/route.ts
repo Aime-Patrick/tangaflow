@@ -7,6 +7,7 @@ const updateCampaignSchema = z.object({
   name: z.string().min(1, "Name cannot be empty").trim().optional(),
   targetAmount: z.number().min(1, "Target amount must be at least $1").optional(),
   currency: z.enum(["USD", "EUR", "GBP", "JPY", "KRW", "INR", "BRL", "RWF", "NGN", "ZAR", "KES", "GHS"]).optional(),
+  barcodeType: z.enum(["qr", "zerocode"]).optional(),
 });
 
 export async function GET(
