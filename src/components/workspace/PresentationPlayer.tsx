@@ -376,7 +376,7 @@ export function PresentationPlayer({
 
   return (
     <div className="flex flex-col items-center justify-start h-full space-y-4 min-h-0 w-full">
-      {raisedAmount > 0 && (
+      {view === "loaded" && raisedAmount > 0 && (
         <motion.div
           layoutId="progress-bar"
           className="shrink-0 w-full mb-2"
