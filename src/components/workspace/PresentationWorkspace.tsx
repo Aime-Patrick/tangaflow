@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { PresentationPlayer } from "./PresentationPlayer";
 import { QRCodeDisplay } from "./QRCodeDisplay";
@@ -97,9 +97,24 @@ export function PresentationWorkspace() {
   const startRatioRef = useRef(0);
   const currentRatioRef = useRef(splitRatio);
 
+  // Framer Motion animated split ratio — springs when preset changes, instant during drag
+  const animatedRatio = useMotionValue(splitRatio);
+  const pptFlexBasis = useTransform(animatedRatio, (v) => `${v}%`);
+  const qrFlexBasis = useTransform(animatedRatio, (v) => `${100 - v}%`);
+
   useEffect(() => {
     currentRatioRef.current = splitRatio;
-  }, [splitRatio]);
+    if (isDragging) {
+      animatedRatio.set(splitRatio);
+    } else {
+      animate(animatedRatio, splitRatio, {
+        type: "spring",
+        stiffness: 280,
+        damping: 30,
+        mass: 0.8,
+      });
+    }
+  }, [splitRatio, isDragging, animatedRatio]);
 
   const handlePreset = useCallback((preset: LayoutPreset) => {
     setLayoutPreset(preset);
@@ -279,15 +294,13 @@ export function PresentationWorkspace() {
         <div
           ref={wrapperRef}
           className="flex-1 flex h-full w-full gap-0"
-          style={{
-            "--ppt-ratio": `${splitRatio}%`,
-            "--qr-ratio": `${100 - splitRatio}%`,
-          } as React.CSSProperties}
         >
-          <div
-            className={`h-full overflow-hidden ${isDragging ? "" : "transition-[flex] duration-200"}`}
+          <motion.div
+            className="h-full overflow-hidden"
             style={{
-              flex: showPanels ? `0 0 var(--ppt-ratio)` : "1 1 100%",
+              flexGrow: 0,
+              flexShrink: 0,
+              flexBasis: showPanels ? pptFlexBasis : "100%",
             }}
           >
             <PresentationPlayer
@@ -302,7 +315,7 @@ export function PresentationWorkspace() {
               currency={currency}
               onLoadedChange={handlePptLoaded}
             />
-          </div>
+          </motion.div>
 
           {showPanels && (
             <div
@@ -317,12 +330,16 @@ export function PresentationWorkspace() {
             {showPanels && (
               <motion.div
                 key="qr-panel"
-                initial={{ opacity: 0, flex: "0 0 0%" }}
-                animate={{ opacity: 1, flex: `0 0 var(--qr-ratio)` }}
-                exit={{ opacity: 0, flex: "0 0 0%" }}
+                initial={{ opacity: 0, flexBasis: "0%", flexGrow: 0, flexShrink: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, flexBasis: "0%" }}
+                style={{
+                  flexGrow: 0,
+                  flexShrink: 0,
+                  flexBasis: qrFlexBasis,
+                }}
                 transition={{
-                  flex: { duration: isDragging ? 0 : 0.2, ease: "easeInOut" },
-                  opacity: { duration: 0.2 },
+                  opacity: { duration: 0.25, ease: "easeInOut" },
                 }}
                 className="h-full overflow-hidden -mr-4 qr-panel-container ml-[8px]"
               >
