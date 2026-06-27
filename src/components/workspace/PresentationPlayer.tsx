@@ -379,7 +379,7 @@ export function PresentationPlayer({
       {raisedAmount > 0 && (
         <motion.div
           layoutId="progress-bar"
-          className="shrink-0 w-full mb-10"
+          className="shrink-0 w-full mb-2"
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
           <CampaignProgressBar raisedAmount={raisedAmount} targetAmount={targetAmount} currency={currency} />
