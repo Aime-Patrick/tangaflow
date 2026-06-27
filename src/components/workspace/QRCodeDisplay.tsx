@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { ZeroCode } from "@pryro/00code-react";
 import { useUIStore } from "@/stores/uiStore";
@@ -12,6 +12,7 @@ interface QRCodeDisplayProps {
   content: string;
   raisedAmount?: number;
   currency?: string;
+  codeType?: CodeType;
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -33,9 +34,9 @@ export function QRCodeDisplay({
   content,
   raisedAmount = 0,
   currency = "USD",
+  codeType = "qr",
 }: QRCodeDisplayProps) {
   const theme = useUIStore((s) => s.theme);
-  const [codeType, setCodeType] = useState<CodeType>("qr");
   const bgColor = theme === "dark" ? "#000000" : "#FFFFFF";
   const fgColor = theme === "dark" ? "#DFDFDF" : "#000000";
 
@@ -64,31 +65,6 @@ export function QRCodeDisplay({
             />
           )}
         </div>
-
-        {/* Toggle */}
-        <div className="flex items-center gap-1 mt-3">
-          <button
-            onClick={() => setCodeType("qr")}
-            className={`px-3 py-1 text-[10px] font-bold transition-colors ${
-              codeType === "qr"
-                ? "bg-accent-primary text-bg-base"
-                : "bg-bg-elevated text-text-secondary hover:text-text-primary"
-            }`}
-          >
-            QR Code
-          </button>
-          <button
-            onClick={() => setCodeType("zerocode")}
-            className={`px-3 py-1 text-[10px] font-bold transition-colors ${
-              codeType === "zerocode"
-                ? "bg-accent-primary text-bg-base"
-                : "bg-bg-elevated text-text-secondary hover:text-text-primary"
-            }`}
-          >
-            00Code
-          </button>
-        </div>
-
         <div className="flex items-center justify-between px-5 pt-2">
           <h3 className="text-sm text-text-primary">
             {formatCurrency(raisedAmount, currency)}

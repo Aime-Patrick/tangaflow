@@ -61,6 +61,8 @@ interface SettingsDialogProps {
   currency: string;
   onCurrencyChange: (value: string) => void;
   polarCheckoutUrl: string;
+  codeType: "qr" | "zerocode";
+  onCodeTypeChange: (value: "qr" | "zerocode") => void;
   onSave: () => void;
   isSaving?: boolean;
 }
@@ -75,6 +77,8 @@ export function SettingsDialog({
   currency,
   onCurrencyChange,
   polarCheckoutUrl,
+  codeType,
+  onCodeTypeChange,
   onSave,
   isSaving,
 }: SettingsDialogProps) {
@@ -151,6 +155,35 @@ export function SettingsDialog({
           </div>
 
           <div className="border-t border-border-subtle" />
+
+          {/* Barcode Type */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
+              Barcode Type
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => onCodeTypeChange("qr")}
+                className={`flex-1 h-8 border text-xs font-semibold transition-colors ${
+                  codeType === "qr"
+                    ? "border-accent-primary bg-accent-primary text-bg-base"
+                    : "border-border-default bg-bg-elevated text-text-secondary hover:text-text-primary hover:border-border-strong"
+                }`}
+              >
+                QR Code
+              </button>
+              <button
+                onClick={() => onCodeTypeChange("zerocode")}
+                className={`flex-1 h-8 border text-xs font-semibold transition-colors ${
+                  codeType === "zerocode"
+                    ? "border-accent-primary bg-accent-primary text-bg-base"
+                    : "border-border-default bg-bg-elevated text-text-secondary hover:text-text-primary hover:border-border-strong"
+                }`}
+              >
+                00Code
+              </button>
+            </div>
+          </div>
 
           {/* Polar Checkout URL */}
           <div className="space-y-1.5">

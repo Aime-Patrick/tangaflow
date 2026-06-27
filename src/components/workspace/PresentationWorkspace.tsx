@@ -36,6 +36,7 @@ export function PresentationWorkspace() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isPptLoaded, setIsPptLoaded] = useState(false);
   const [eventNameDialogOpen, setEventNameDialogOpen] = useState(false);
+  const [codeType, setCodeType] = useState<"qr" | "zerocode">("qr");
 
   const [sessionKey, setSessionKeyState] = useState<string | null>(getSessionKey);
 
@@ -244,6 +245,8 @@ export function PresentationWorkspace() {
         currency={currency}
         onCurrencyChange={handleCurrencyChange}
         polarCheckoutUrl={polarCheckoutUrl}
+        codeType={codeType}
+        onCodeTypeChange={setCodeType}
         onSave={handleSaveSettings}
         isSaving={updateCampaign.isPending}
       />
@@ -300,6 +303,7 @@ export function PresentationWorkspace() {
                   content={polarCheckoutUrl}
                   raisedAmount={raisedAmount}
                   currency={currency}
+                  codeType={codeType}
                 />
               </motion.div>
             )}
