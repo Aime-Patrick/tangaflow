@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@aiden0z/pptx-renderer": "^1.2.0",
+    "@aiden0z/pptx-renderer": "^1.2.1",
     "@base-ui/react": "^1.6.0",
     "@hookform/resolvers": "^5.4.0",
     "@polar-sh/nextjs": "^0.9.6",

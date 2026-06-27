@@ -341,3 +341,63 @@ body {
     transform: scale(1);
   }
 }
+
+/* Reset slide rendering element styles to prevent global Tailwind overrides from breaking layout */
+#presentation-viewport,
+#presentation-viewport * {
+  line-height: normal !important;
+}
+
+/* Container queries for dynamic QR code sizing in narrow/focus panels */
+.qr-panel-container {
+  container-type: inline-size;
+}
+
+/* Default styling for the QR code display layout */
+.qr-inner-wrapper {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+.qr-card {
+  padding-top: 4px;
+  padding-bottom: 16px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* Intermediate panel widths (between 281px and 340px) */
+@container (min-width: 281px) and (max-width: 340px) {
+  .qr-inner-wrapper {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .qr-card {
+    padding-top: 2px;
+    padding-bottom: 12px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* Narrow panel width (focus mode or collapsed ratio <= 280px) */
+@container (max-width: 280px) {
+  .qr-inner-wrapper {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .qr-card {
+    padding-top: 0px;
+    padding-bottom: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+/* ZeroCode canvas override — library sets inline style width/height, override with !important */
+.zerocode-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain;
+}

@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PptxViewer } from "@aiden0z/pptx-renderer";
+import { PptxViewer, RECOMMENDED_ZIP_LIMITS } from "@aiden0z/pptx-renderer";
 import { savePPTX, savePPTXCloud, loadPPTX, loadPPTXFromCloud, listPPTX, deletePPTX, type PPTXMeta } from "@/lib/pptxStorage";
 import { CampaignProgressBar } from "./CampaignProgressBar";
 import { toast } from "sonner";
@@ -58,11 +58,13 @@ export function PresentationPlayer({
     { fileName: string; size: number }[]
   >([]);
   const [isHoveringViewport, setIsHoveringViewport] = useState(false);
-  const [isHoveringControls, setIsHoveringControls] = useState(false);
+  const [isTopHoveringControls, setIsTopHoveringControls] = useState(false);
+  const [isBottomHoveringControls, setIsBottomHoveringControls] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pptxContainerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<PptxViewer | null>(null);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const topControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const bottomControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setSavedFiles(listPPTX());
@@ -169,26 +171,34 @@ export function PresentationPlayer({
 
 
   const handleViewportMouseEnter = () => {
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     setIsHoveringViewport(true);
   };
 
   const handleViewportMouseLeave = () => {
-    controlsTimeoutRef.current = setTimeout(() => {
-      setIsHoveringViewport(false);
+    setIsHoveringViewport(false);
+  };
+
+  const handleTopControlsMouseEnter = () => {
+    if (topControlsTimeoutRef.current) clearTimeout(topControlsTimeoutRef.current);
+    setIsTopHoveringControls(true);
+  };
+
+  const handleTopControlsMouseLeave = () => {
+    topControlsTimeoutRef.current = setTimeout(() => {
+      setIsTopHoveringControls(false);
     }, 300);
   };
 
-  const handleControlsMouseEnter = () => {
-    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    setIsHoveringControls(true);
+  const handleBottomControlsMouseEnter = () => {
+    if (bottomControlsTimeoutRef.current) clearTimeout(bottomControlsTimeoutRef.current);
+    setIsBottomHoveringControls(true);
   };
 
-  const handleControlsMouseLeave = () => {
-    controlsTimeoutRef.current = setTimeout(() => {
-      setIsHoveringControls(false);
+  const handleBottomControlsMouseLeave = () => {
+    bottomControlsTimeoutRef.current = setTimeout(() => {
+      setIsBottomHoveringControls(false);
     }, 300);
-  };;
+  };
 
   const processPPTX = async (file: File) => {
     // Validate file type
@@ -275,12 +285,22 @@ export function PresentationPlayer({
 
       const viewer = new PptxViewer(pptxContainerRef.current, {
         fitMode: "contain",
+        zipLimits: RECOMMENDED_ZIP_LIMITS,
+        lazySlides: true,
+        lazyMedia: true,
         onSlideChange: (index: number) => setActiveSlideIndex(index),
+        onSlideError: (index: number, error: unknown) => {
+          console.warn(`Slide ${index + 1} rendering error:`, error);
+        },
       });
 
       await new Promise((r) => setTimeout(r, 300));
       setUploadProgress(80);
-      await viewer.open(arrayBuffer, { renderMode: "slide" });
+      await viewer.open(arrayBuffer, {
+        renderMode: "slide",
+        lazySlides: true,
+        lazyMedia: true,
+      });
 
       viewerRef.current = viewer;
       setPptxSlideCount(viewer.slideCount);
@@ -295,8 +315,8 @@ export function PresentationPlayer({
       toast.error(
         "Failed to parse the PowerPoint file. Please try another file.",
       );
-    setIsPlaying(false);
-    setView("empty");
+      setIsPlaying(false);
+      setView("empty");
     }
   };
 
@@ -355,143 +375,265 @@ export function PresentationPlayer({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full space-y-4">
-      {view === "loaded" && raisedAmount > 0 && (
+    <div className="flex flex-col items-center justify-center h-full space-y-4 min-h-0 w-full">
+      {raisedAmount > 0 && (
         <motion.div
           layoutId="progress-bar"
-          className="shrink-0 w-full mb-10 md-flex-1"
+          className="shrink-0 w-full mb-10"
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
           <CampaignProgressBar raisedAmount={raisedAmount} targetAmount={targetAmount} currency={currency} />
         </motion.div>
       )}
 
-      {/* PPTX container */}
-      <div
-        id="presentation-viewport"
-        className={`relative w-full overflow-hidden shadow-xl bg-bg-base ${view === "loaded" ? "block animate-[fadeIn_0.4s_ease-out]" : "hidden"}`}
-        style={{ aspectRatio: "16/9" }}
-        onMouseEnter={handleViewportMouseEnter}
-        onMouseLeave={handleViewportMouseLeave}
-      >
+      {/* Main workspace container wrapping player & empty/loading state to restrict size */}
+      <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+        {/* PPTX container - always in DOM so ref is available, hidden conditionally */}
         <div
-          ref={pptxContainerRef}
-          className="w-full"
-        />
+          id="presentation-viewport"
+          className={`relative overflow-hidden shadow-xl bg-bg-base ${view === "loaded" ? "block animate-[fadeIn_0.4s_ease-out]" : "hidden"}`}
+          style={{
+            aspectRatio: "16/9",
+            width: "100%",
+            height: "100%",
+            maxWidth: "100%",
+            maxHeight: "100%",
+          }}
+          onMouseEnter={handleViewportMouseEnter}
+          onMouseLeave={handleViewportMouseLeave}
+        >
+          <div
+            ref={pptxContainerRef}
+            className="w-full h-full"
+          />
 
-        {/* Top-right controls */}
-        <div className="absolute top-4 right-4 flex items-center gap-1.5 z-10">
-          <Badge className="bg-bg-elevated/70 text-text-secondary text-xs px-1 py-0.5 font-bold backdrop-blur-sm rounded-none">
-            {activeSlideIndex + 1} / {pptxSlideCount}
-          </Badge>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleReset}
-            className="px-1 py-0.5 size-5.5 bg-bg-elevated/70 text-text-secondary hover:text-text-primary hover:bg-bg-elevated/90 rounded-none backdrop-blur-sm"
-            title="Close presentation"
+          {/* Top-right controls - dot that expands on hover */}
+          <div
+            className="absolute top-4 right-4 z-10"
+            onMouseEnter={handleTopControlsMouseEnter}
+            onMouseLeave={handleTopControlsMouseLeave}
           >
-            <X className="w-3 h-3" />
-          </Button>
+            <motion.div
+              className="flex items-center gap-1.5 overflow-hidden"
+              initial={false}
+              animate={{
+                width: isTopHoveringControls ? "auto" : 32,
+                height: 32,
+                padding: isTopHoveringControls ? "6px 10px" : "6px",
+                opacity: isHoveringViewport || isTopHoveringControls ? 1 : 0,
+              }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+            >
+              {isTopHoveringControls ? (
+                <>
+                  <Badge className="bg-bg-elevated/70 text-text-secondary text-xs px-1 py-0.5 font-bold backdrop-blur-sm rounded-none">
+                    {activeSlideIndex + 1} / {pptxSlideCount}
+                  </Badge>
+                  <div className="w-px h-4 bg-border-default/20 mx-0.5" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleReset}
+                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-none"
+                    title="Close presentation"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </>
+              ) : (
+                <MoreVertical className="h-4 w-4 text-text-secondary" />
+              )}
+            </motion.div>
+          </div>
+
+          {/* Bottom controls - dot that expands on hover */}
+          <div
+            className="absolute bottom-3 right-3 z-10"
+            onMouseEnter={handleBottomControlsMouseEnter}
+            onMouseLeave={handleBottomControlsMouseLeave}
+          >
+            <motion.div
+              className="flex items-center gap-1.5 overflow-hidden"
+              initial={false}
+              animate={{
+                width: isBottomHoveringControls ? "auto" : 32,
+                height: 32,
+                padding: isBottomHoveringControls ? "6px 10px" : "6px",
+                opacity: isHoveringViewport || isBottomHoveringControls ? 1 : 0,
+              }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+            >
+              {isBottomHoveringControls ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handlePrev}
+                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-none"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsPlaying(!isPlaying)}
+                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-none"
+                  >
+                    {isPlaying ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleNext}
+                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-none"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <div className="w-px h-4 bg-border-default/20 mx-0.5" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleFullscreen}
+                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-none"
+                  >
+                    {isFullscreen ? (
+                      <Minimize2 className="h-3.5 w-3.5" />
+                    ) : (
+                      <Maximize2 className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <MoreVertical className="h-4 w-4 text-text-secondary" />
+              )}
+            </motion.div>
+          </div>
         </div>
 
-        {/* Bottom controls - dot that expands on hover */}
-        <div
-          className="absolute bottom-3 right-3 z-10"
-          onMouseEnter={handleControlsMouseEnter}
-          onMouseLeave={handleControlsMouseLeave}
-        >
-          <motion.div
-            className="flex items-center gap-1.5 overflow-hidden"
-            initial={false}
-            animate={{
-              width: isHoveringControls ? "auto" : 32,
-              height: 32,
-              padding: isHoveringControls ? "6px 10px" : "6px",
-              opacity: isHoveringViewport || isHoveringControls ? 1 : 0,
+        {/* Empty / Loading state */}
+        {view !== "loaded" && (
+          <div
+            className="relative overflow-hidden flex items-center justify-center w-full bg-bg-base"
+            style={{
+              aspectRatio: "16/9",
+              width: "100%",
+              height: "100%",
+              maxWidth: "100%",
+              maxHeight: "100%",
             }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleFileDrop}
           >
-            {isHoveringControls ? (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handlePrev}
-                   className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-full"
+            <AnimatePresence mode="wait">
+              {view === "empty" ? (
+                <motion.div
+                  key="content"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="flex flex-col z-10 w-full h-full justify-center"
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-full"
-                >
-                  {isPlaying ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleNext}
-                  className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-full"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <div className="w-px h-4 bg-border-default/20 mx-0.5" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleFullscreen}
-                  className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-full"
-                >
-                  {isFullscreen ? (
-                    <Minimize2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <Maximize2 className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </>
-            ) : (
-              <MoreVertical className="h-4 w-4 text-text-secondary" />
-            )}
-          </motion.div>
-        </div>
-      </div>
+                  {savedFiles.length > 0 ? (
+                    /* Has saved files — centered list */
+                    <>
+                      <div className="flex-1 flex flex-col items-center justify-center p-6 w-full">
+                        {raisedAmount > 0 && (
+                          <motion.div
+                            layoutId="progress-bar"
+                            className="shrink-0 mb-6 w-full max-w-lg"
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                          >
+                            <CampaignProgressBar raisedAmount={raisedAmount} targetAmount={targetAmount} currency={currency} />
+                          </motion.div>
+                        )}
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".pptx"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
 
-      {/* Empty / Loading state */}
-      {view !== "loaded" && (
-        <div
-          className="flex-1 flex flex-col min-h-0 relative overflow-hidden w-full"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleFileDrop}
-        >
-          <AnimatePresence mode="wait">
-            {view === "empty" ? (
-              <motion.div
-                key="content"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="flex-1 flex flex-col z-10"
-              >
-                {savedFiles.length > 0 ? (
-                  /* Has saved files — centered list */
-                  <>
-                    <div className="flex-1 flex flex-col items-center justify-center p-6 w-full">
+                        <div className="w-full max-w-md flex flex-col items-center">
+                          <AnimatePresence>
+                            {savedFiles.map((f, i) => (
+                              <motion.div
+                                key={f.fileName}
+                                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                                transition={{ duration: 0.3, delay: i * 0.05 }}
+                                onClick={() => handleRestoreFile(f.fileName)}
+                                className="w-full flex items-center justify-between px-4 py-2.5 bg-bg-elevated hover:bg-bg-hover transition-colors group text-left mb-2 cursor-pointer"
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <FileText className="h-3.5 w-3.5 text-text-secondary shrink-0" />
+                                  <span className="text-xs font-semibold text-text-secondary group-hover:text-text-primary truncate">
+                                    {f.fileName}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span className="text-[9px] text-text-muted">
+                                    {(f.size / 1024 / 1024).toFixed(1)}MB
+                                  </span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteSaved(f.fileName);
+                                    }}
+                                    className="text-text-muted hover:text-red-400 p-0.5"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: savedFiles.length * 0.05 + 0.1 }}
+                            className="mt-3"
+                          >
+                            <Button
+                              size="sm"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="bg-accent-primary hover:bg-accent-primary-hover text-bg-base font-bold text-xs h-7 border-none rounded-none"
+                            >
+                              <FileUp className="h-3 w-3 mr-1" />
+                              Upload New
+                            </Button>
+                          </motion.div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    /* No saved files — upload prompt */
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center w-full">
                       {raisedAmount > 0 && (
                         <motion.div
                           layoutId="progress-bar"
-                          className="shrink-0 mb-6 w-full max-w-lg"
+                          className="shrink-0 mb-4 w-full max-w-lg"
                           transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         >
                           <CampaignProgressBar raisedAmount={raisedAmount} targetAmount={targetAmount} currency={currency} />
                         </motion.div>
                       )}
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bg-elevated border border-border-subtle shadow-md text-text-primary mb-4">
+                        <FileUp className="h-7 w-7" />
+                      </div>
+                      <h4 className="text-base font-bold text-text-primary">
+                        Upload your Presentation
+                      </h4>
+                      <p className="text-xs text-text-secondary mt-1 max-w-[360px] mx-auto mb-4">
+                        Drag and drop your PPTX file here, or click browse to
+                        upload.
+                      </p>
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -499,112 +641,38 @@ export function PresentationPlayer({
                         onChange={handleFileSelect}
                         className="hidden"
                       />
-
-                      <div className="w-full max-w-md flex flex-col items-center">
-                        <AnimatePresence>
-                          {savedFiles.map((f, i) => (
-                            <motion.div
-                              key={f.fileName}
-                              initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.8, y: -20 }}
-                              transition={{ duration: 0.3, delay: i * 0.05 }}
-                              onClick={() => handleRestoreFile(f.fileName)}
-                              className="w-full flex items-center justify-between px-4 py-2.5 bg-bg-elevated hover:bg-bg-hover transition-colors group text-left mb-2 cursor-pointer"
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <FileText className="h-3.5 w-3.5 text-text-secondary shrink-0" />
-                                <span className="text-xs font-semibold text-text-secondary group-hover:text-text-primary truncate">
-                                  {f.fileName}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[9px] text-text-muted">
-                                  {(f.size / 1024 / 1024).toFixed(1)}MB
-                                </span>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteSaved(f.fileName);
-                                  }}
-                                  className="text-text-muted hover:text-red-400 p-0.5"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: savedFiles.length * 0.05 + 0.1 }}
-                          className="mt-3"
-                        >
-                          <Button
-                            size="sm"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="bg-accent-primary hover:bg-accent-primary-hover text-bg-base font-bold text-xs h-7 border-none rounded-none"
-                          >
-                            <FileUp className="h-3 w-3 mr-1" />
-                            Upload New
-                          </Button>
-                        </motion.div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  /* No saved files — upload prompt */
-                  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center w-full">
-                    {raisedAmount > 0 && (
-                      <motion.div
-                        layoutId="progress-bar"
-                        className="shrink-0 mb-4 w-full max-w-lg"
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      <Button
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="bg-accent-primary hover:bg-accent-primary-hover text-bg-base font-bold"
                       >
-                        <CampaignProgressBar raisedAmount={raisedAmount} targetAmount={targetAmount} currency={currency} />
-                      </motion.div>
-                    )}
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bg-elevated border border-border-subtle shadow-md text-text-primary mb-4">
-                      <FileUp className="h-7 w-7" />
+                        Browse Files
+                      </Button>
+                      <span className="text-[10px] text-text-muted mt-3 font-semibold">
+                        Supports PowerPoint (.pptx) files
+                      </span>
                     </div>
-                    <h4 className="text-base font-bold text-text-primary">
-                      Upload your Presentation
-                    </h4>
-                    <p className="text-xs text-text-secondary mt-1 max-w-[360px] mx-auto mb-4">
-                      Drag and drop your PPTX file here, or click browse to
-                      upload.
-                    </p>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pptx"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <Button
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="bg-accent-primary hover:bg-accent-primary-hover text-bg-base font-bold"
-                    >
-                      Browse Files
-                    </Button>
-                    <span className="text-[10px] text-text-muted mt-3 font-semibold">
-                      Supports PowerPoint (.pptx) files
-                    </span>
-                  </div>
-                )}
-              </motion.div>
-            ) : (
-              /* Loading state */
-              <div className="flex-1 flex flex-col items-center justify-center z-10 p-4 w-full">
-                <Skeleton className="w-full shadow-xl" style={{ aspectRatio: "16/9" }} />
-              </div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
+                  )}
+                </motion.div>
+              ) : (
+                /* Loading state */
+                <div
+                  className="relative overflow-hidden shadow-xl bg-bg-base z-10 mx-auto"
+                  style={{
+                    aspectRatio: "16/9",
+                    width: "100%",
+                    height: "100%",
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                  }}
+                >
+                  <Skeleton className="w-full h-full rounded-none" />
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

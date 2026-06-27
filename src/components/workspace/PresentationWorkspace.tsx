@@ -75,12 +75,17 @@ export function PresentationWorkspace() {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("tangaflow-layout");
       if (saved && saved in PRESETS) return saved as LayoutPreset;
+      if (saved === "custom") return null;
     }
     return "default";
   });
   const [splitRatio, setSplitRatio] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("tangaflow-layout");
+      if (saved === "custom") {
+        const custom = localStorage.getItem("tangaflow-custom-ratio");
+        if (custom) return parseFloat(custom);
+      }
       if (saved && PRESETS[saved]) return PRESETS[saved];
     }
     return PRESETS.default;
@@ -90,6 +95,11 @@ export function PresentationWorkspace() {
   const rafRef = useRef<number>(0);
   const startXRef = useRef(0);
   const startRatioRef = useRef(0);
+  const currentRatioRef = useRef(splitRatio);
+
+  useEffect(() => {
+    currentRatioRef.current = splitRatio;
+  }, [splitRatio]);
 
   const handlePreset = useCallback((preset: LayoutPreset) => {
     setLayoutPreset(preset);
@@ -131,6 +141,10 @@ export function PresentationWorkspace() {
       setIsDragging(false);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
+      
+      // Save custom ratio to localStorage
+      localStorage.setItem("tangaflow-layout", "custom");
+      localStorage.setItem("tangaflow-custom-ratio", currentRatioRef.current.toString());
     };
 
     document.addEventListener("mousemove", handleMouseMove, { passive: true });
@@ -264,7 +278,7 @@ export function PresentationWorkspace() {
       <main className="flex-1 flex overflow-hidden p-6 gap-6 min-h-0">
         <div
           ref={wrapperRef}
-          className="flex-1 flex h-full max-w-7xl mx-auto w-full gap-0"
+          className="flex-1 flex h-full w-full gap-0"
           style={{
             "--ppt-ratio": `${splitRatio}%`,
             "--qr-ratio": `${100 - splitRatio}%`,
@@ -306,8 +320,11 @@ export function PresentationWorkspace() {
                 initial={{ opacity: 0, flex: "0 0 0%" }}
                 animate={{ opacity: 1, flex: `0 0 var(--qr-ratio)` }}
                 exit={{ opacity: 0, flex: "0 0 0%" }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className={`h-full overflow-hidden ${isDragging ? "" : "transition-[flex] duration-200"}`}
+                transition={{
+                  flex: { duration: isDragging ? 0 : 0.2, ease: "easeInOut" },
+                  opacity: { duration: 0.2 },
+                }}
+                className="h-full overflow-hidden -mr-4 qr-panel-container ml-[8px]"
               >
                 <QRCodeDisplay
                   content={polarCheckoutUrl}
