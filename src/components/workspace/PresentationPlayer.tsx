@@ -387,17 +387,16 @@ export function PresentationPlayer({
       )}
 
       {/* Main workspace container wrapping player & empty/loading state to restrict size */}
-      <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+      <div className="flex-1 min-h-0 w-full flex items-center justify-center [container-type:size]">
         {/* PPTX container - always in DOM so ref is available, hidden conditionally */}
         <div
           id="presentation-viewport"
           className={`relative overflow-hidden shadow-xl bg-bg-base ${view === "loaded" ? "block animate-[fadeIn_0.4s_ease-out]" : "hidden"}`}
           style={{
             aspectRatio: "16/9",
-            width: "100%",
-            height: "100%",
-            maxWidth: "100%",
-            maxHeight: "100%",
+            // min() picks: full panel width OR height-derived width — whichever is smaller
+            // This is the CSS "contain" pattern using container query units
+            width: "min(100cqw, calc(100cqh * 16 / 9))",
           }}
           onMouseEnter={handleViewportMouseEnter}
           onMouseLeave={handleViewportMouseLeave}
