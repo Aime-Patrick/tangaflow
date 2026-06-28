@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PptxViewer, RECOMMENDED_ZIP_LIMITS } from "@aiden0z/pptx-renderer";
-import { savePPTX, savePPTXCloud, loadPPTX, loadPPTXFromCloud, listPPTX, deletePPTX, type PPTXMeta } from "@/lib/pptxStorage";
+import { savePPTX, savePPTXCloud, loadPPTX, loadPPTXFromCloud, listPPTX, deletePPTX, savePPTXIndexedDB, loadPPTXIndexedDB, type PPTXMeta } from "@/lib/pptxStorage";
 import { CampaignProgressBar } from "./CampaignProgressBar";
 import { toast } from "sonner";
 
@@ -200,7 +200,7 @@ export function PresentationPlayer({
     }, 300);
   };
 
-  const processPPTX = async (file: File) => {
+  const processPPTX = async (file: File, skipSave = false) => {
     // Validate file type
     if (!file.name.endsWith(".pptx")) {
       toast.error("Only .pptx files are supported.");
@@ -219,47 +219,49 @@ export function PresentationPlayer({
 
       await new Promise((r) => setTimeout(r, 200));
 
-      // Check file size for localStorage
-      const exceedsLimit = file.size > MAX_FILE_SIZE;
-      if (!exceedsLimit) {
-        try {
-          savePPTX(file.name, arrayBuffer);
-          setSavedFiles(listPPTX());
-        } catch {
-          toast.warning(
-            "File saved to memory only (too large for local storage).",
-          );
-        }
-      } else {
-        // Upload to Cloudinary
-        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-        const uploadPreset = "tangaflow_unsigned";
-        const folder = "tangaflow/pptx";
-        if (cloudName) {
-          setUploadProgress(35);
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("upload_preset", uploadPreset);
-          formData.append("folder", folder);
-          formData.append("resource_type", "raw");
+      // Save to storage (skip on restore)
+      if (!skipSave) {
+        const exceedsLimit = file.size > MAX_FILE_SIZE;
+        if (!exceedsLimit) {
           try {
-            const res = await fetch(
-              `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`,
-              { method: "POST", body: formData }
-            );
-            if (res.ok) {
-              const data = await res.json();
-              savePPTXCloud(file.name, file.size, data.secure_url);
-              setSavedFiles(listPPTX());
-              toast.success("File saved to cloud storage.");
-            } else {
-              toast.warning("Cloud upload failed — session only.");
-            }
+            savePPTX(file.name, arrayBuffer);
+            setSavedFiles(listPPTX());
           } catch {
-            toast.warning("Cloud upload failed — session only.");
+            toast.warning(
+              "File saved to memory only (too large for local storage).",
+            );
           }
         } else {
-          toast.warning("File too large for local storage — session only.");
+          // Upload to Cloudinary
+          const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+          const uploadPreset = "tangaflow_unsigned";
+          const folder = "tangaflow/pptx";
+          if (cloudName) {
+            setUploadProgress(35);
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", uploadPreset);
+            formData.append("folder", folder);
+            formData.append("resource_type", "raw");
+            try {
+              const res = await fetch(
+                `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`,
+                { method: "POST", body: formData }
+              );
+              if (res.ok) {
+                const data = await res.json();
+                savePPTXCloud(file.name, file.size, data.secure_url);
+                setSavedFiles(listPPTX());
+                toast.success("File saved to cloud storage.");
+              } else {
+                toast.warning("Cloud upload failed — session only.");
+              }
+            } catch {
+              toast.warning("Cloud upload failed — session only.");
+            }
+          } else {
+            toast.warning("File too large for local storage — session only.");
+          }
         }
       }
 
@@ -333,26 +335,39 @@ export function PresentationPlayer({
   };
 
   const handleRestoreFile = async (fileName: string) => {
-    // Check if it's a cloud file
     const meta = listPPTX().find((f) => f.fileName === fileName);
     let buffer: ArrayBuffer | null = null;
 
-    if (meta?.cloudUrl) {
+    // 1. Check localStorage (small files ≤4MB)
+    buffer = loadPPTX(fileName);
+
+    // 2. Check IndexedDB (large files)
+    if (!buffer) {
+      buffer = await loadPPTXIndexedDB(fileName);
+    }
+
+    // 3. Download from cloud
+    if (!buffer && meta?.cloudUrl) {
       toast.info("Downloading from cloud...");
       buffer = await loadPPTXFromCloud(meta.cloudUrl);
       if (!buffer) {
         toast.error("Failed to download from cloud.");
         return;
       }
-    } else {
-      buffer = loadPPTX(fileName);
-      if (!buffer) return;
+      // Cache for next time
+      if (buffer.byteLength <= MAX_FILE_SIZE) {
+        try { savePPTX(fileName, buffer); } catch { /* quota */ }
+      } else {
+        await savePPTXIndexedDB(fileName, buffer);
+      }
     }
+
+    if (!buffer) return;
 
     const file = new File([buffer], fileName, {
       type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     });
-    await processPPTX(file);
+    await processPPTX(file, true);
   };
 
   const handleDeleteSaved = (fileName: string) => {
@@ -371,7 +386,6 @@ export function PresentationPlayer({
     setView("empty");
     setActiveSlideIndex(0);
     setPptxSlideCount(0);
-    setView("empty");
   };
 
   return (

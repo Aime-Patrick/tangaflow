@@ -1,5 +1,53 @@
 const STORAGE_PREFIX = "tangaflow_pptx_";
 const INDEX_KEY = "tangaflow_pptx_index";
+const DB_NAME = "tangaflow-cache";
+const DB_STORE = "files";
+const DB_VERSION = 1;
+
+// --- IndexedDB helpers ---
+
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      req.result.createObjectStore(DB_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function savePPTXIndexedDB(fileName: string, buffer: ArrayBuffer): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction(DB_STORE, "readwrite");
+  tx.objectStore(DB_STORE).put(buffer, fileName);
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  });
+}
+
+export async function loadPPTXIndexedDB(fileName: string): Promise<ArrayBuffer | null> {
+  const db = await openDB();
+  const tx = db.transaction(DB_STORE, "readonly");
+  const req = tx.objectStore(DB_STORE).get(fileName);
+  return new Promise((resolve) => {
+    req.onsuccess = () => { db.close(); resolve(req.result ?? null); };
+    req.onerror = () => { db.close(); resolve(null); };
+  });
+}
+
+export async function deletePPTXIndexedDB(fileName: string): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction(DB_STORE, "readwrite");
+  tx.objectStore(DB_STORE).delete(fileName);
+  return new Promise((resolve) => {
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); resolve(); };
+  });
+}
+
+// --- localStorage helpers ---
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -82,6 +130,7 @@ export function deletePPTX(fileName: string): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_PREFIX + fileName);
   setIndex(getIndex().filter((e) => e.fileName !== fileName));
+  deletePPTXIndexedDB(fileName);
 }
 
 export function getPPTXSize(fileName: string): number {
