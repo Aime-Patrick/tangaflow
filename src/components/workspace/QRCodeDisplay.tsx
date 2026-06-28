@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { ZeroCode } from "@pryro/00code-react";
 import { useUIStore } from "@/stores/uiStore";
@@ -34,6 +34,38 @@ export function QRCodeDisplay({
   const animationRef = useRef<number | null>(null);
   const controls = useAnimation();
 
+  // Card flip state — start on correct face based on codeType
+  const [cardRotation, setCardRotation] = useState(codeType === "zerocode" ? 180 : 0);
+  const [labelCodeType, setLabelCodeType] = useState<"qr" | "zerocode">(codeType);
+  const [showBackContent, setShowBackContent] = useState(false);
+  const prevCodeType = useRef(codeType);
+
+  // Detect codeType changes and trigger flip
+  useEffect(() => {
+    if (prevCodeType.current !== codeType) {
+      setCardRotation((prev) => prev + 180);
+      prevCodeType.current = codeType;
+    }
+  }, [codeType]);
+
+  // Pre-render inactive code near 90° midpoint
+  useEffect(() => {
+    const normalizedRotation = ((cardRotation % 360) + 360) % 360;
+    if (normalizedRotation > 60 && normalizedRotation < 120) {
+      setShowBackContent(true);
+    }
+    if (normalizedRotation > 240 && normalizedRotation < 300) {
+      setShowBackContent(true);
+    }
+  }, [cardRotation]);
+
+  // Handle flip completion — then animate amount label
+  const handleFlipComplete = useCallback(() => {
+    setLabelCodeType(codeType);
+    setShowBackContent(false);
+  }, [codeType]);
+
+  // Counting animation
   useEffect(() => {
     const start = prevAmountRef.current;
     const end = raisedAmount;
@@ -52,7 +84,6 @@ export function QRCodeDisplay({
       if (diff === 0) {
         setDisplayAmount(end);
         setIsCounting(false);
-        // Trigger scale-in bounce animation upon reaching the final target
         controls.start({
           scale: [1, 1.25, 1],
           transition: { duration: 0.4, ease: "easeOut" },
@@ -63,15 +94,12 @@ export function QRCodeDisplay({
       let step = 0;
       if (diff > 0) {
         if (diff > 1000) {
-          // Fast count phase for large increments
           step = Math.max(10, Math.ceil(diff / 12));
         } else {
-          // Slow down phase (decays dynamically when in the last 3 digits / <= 1000)
           step = Math.max(1, Math.ceil(diff * 0.04));
         }
         current = Math.min(end, current + step);
       } else {
-        // Handling decrementing values safely
         if (Math.abs(diff) > 1000) {
           step = Math.max(10, Math.ceil(Math.abs(diff) / 12));
         } else {
@@ -93,14 +121,18 @@ export function QRCodeDisplay({
     };
   }, [raisedAmount, controls]);
 
+  // Determine which face to show based on cumulative rotation
+  const normalizedRotation = ((cardRotation % 360) + 360) % 360;
+  const showZeroCode = normalizedRotation >= 90 && normalizedRotation < 270;
+
   return (
     <div className="flex flex-col items-center justify-center h-full">
       <div className="flex flex-col items-center justify-center min-h-0 w-full qr-inner-wrapper">
-        <div className="w-full max-w-sm flex flex-col gap-1">
-          {/* Amount label aligned to the top-left of the QR card */}
+        {/* Amount label — left on QR, centered on ZeroCode */}
+        <div className="w-full max-w-sm mb-4" style={{ textAlign: labelCodeType === "zerocode" ? "center" : "left" }}>
           <motion.div
             animate={controls}
-            className="flex items-center gap-1.5 self-start select-none"
+            className="inline-flex items-center gap-1.5 select-none"
           >
             <motion.span
               animate={isCounting ? {
@@ -117,24 +149,57 @@ export function QRCodeDisplay({
               {formatCurrency(displayAmount, currency)}
             </span>
           </motion.div>
-
-          {/* QR Card */}
-          <div
-            className="flex items-center justify-center w-full aspect-square qr-card"
-            style={{ backgroundColor: bgColor }}
+        </div>
+        <div
+          className="w-full max-w-sm"
+          style={{ perspective: "1200px" }}
+        >
+          <motion.div
+            animate={{ rotateY: cardRotation }}
+            onAnimationComplete={handleFlipComplete}
+            transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+            style={{
+              transformStyle: "preserve-3d",
+              position: "relative",
+              width: "100%",
+              aspectRatio: "1/1",
+            }}
           >
-            <div className="w-full h-full flex items-center justify-center zerocode-wrapper">
-              {codeType === "qr" ? (
-                <QRCodeSVG
-                  value={content || "https://tangaflow.app"}
-                  size={280}
-                  fgColor={fgColor}
-                  bgColor={bgColor}
-                  includeMargin={false}
-                  level="Q"
-                  className="w-full h-full"
-                />
-              ) : (
+            {/* Front face — QR Code */}
+            <div
+              style={{
+                backfaceVisibility: "hidden",
+                position: "absolute",
+                width: "100%",
+                height: "100%",
+                backgroundColor: bgColor,
+              }}
+              className="flex items-center justify-center"
+            >
+              <QRCodeSVG
+                value={content || "https://tangaflow.app"}
+                size={280}
+                fgColor={fgColor}
+                bgColor={bgColor}
+                includeMargin={false}
+                level="Q"
+                className="w-full h-full"
+              />
+            </div>
+
+            {/* Back face — ZeroCode */}
+            <div
+              style={{
+                backfaceVisibility: "hidden",
+                transform: "rotateY(180deg)",
+                position: "absolute",
+                width: "100%",
+                height: "100%",
+                backgroundColor: bgColor,
+              }}
+              className="flex items-center justify-center"
+            >
+              {(showBackContent || showZeroCode) && (
                 <ZeroCode
                   value={content || "https://tangaflow.app"}
                   type="circular"
@@ -142,7 +207,7 @@ export function QRCodeDisplay({
                 />
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

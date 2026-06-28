@@ -249,7 +249,7 @@ export function PresentationWorkspace() {
   // Polar Checkout URL from campaign
   const polarCheckoutUrl = campaign?.checkoutUrl || "";
 
-  const showPanels = sessionKey !== null && isPptLoaded;
+  const showPanels = sessionKey !== null && isPptLoaded && !campaignLoading;
   const raisedAmount = fundraising?.raisedAmount ?? campaign?.raisedAmount ?? 0;
   const targetAmount = fundraising?.targetAmount ?? campaign?.targetAmount ?? 10000;
   const currency = fundraising?.currency ?? campaign?.currency ?? "USD";
