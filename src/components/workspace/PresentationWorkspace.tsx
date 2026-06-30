@@ -8,7 +8,7 @@ import { QRCodeDisplay } from "./QRCodeDisplay";
 import { SettingsDialog } from "./SettingsDialog";
 import { EventNameDialog } from "./EventNameDialog";
 import { useCampaign, useCreateCampaign, useUpdateCampaign } from "@/features/campaign";
-import { debounce } from "@/lib/utils";
+import { debounce, formatDate } from "@/lib/utils";
 
 type LayoutPreset = "default" | "focus" | null;
 
@@ -187,19 +187,20 @@ export function PresentationWorkspace() {
 
   const handleEventNameSubmit = useCallback(
     (name: string) => {
-      createCampaign.mutate(
-        { name, targetAmount: 10000 },
-        {
-          onSuccess: (data) => {
-            localStorage.setItem("tangaflow-session-key", data._id);
-            setSessionKeyState(data._id);
-            setEventNameDialogOpen(false);
-          },
-        }
-      );
+      const safeName = name.trim() || `Untitled Event - ${formatDate(new Date())}`;
+      createCampaign.mutate({ name: safeName, targetAmount: 10000 });
     },
     [createCampaign]
   );
+
+  useEffect(() => {
+    if (createCampaign.isSuccess && createCampaign.data) {
+      localStorage.setItem("tangaflow-session-key", createCampaign.data._id);
+      setSessionKeyState(createCampaign.data._id);
+      setEventNameDialogOpen(false);
+      createCampaign.reset();
+    }
+  }, [createCampaign.isSuccess, createCampaign.data]);
 
   const debouncedUpdate = useMemo(
     () =>
@@ -236,16 +237,6 @@ export function PresentationWorkspace() {
     [sessionKey, debouncedUpdate]
   );
 
-  const handleSaveSettings = useCallback(() => {
-    if (sessionKey) {
-      updateCampaign.mutate({
-        name: campaign?.name,
-        targetAmount: campaign?.targetAmount,
-        currency: campaign?.currency,
-      });
-    }
-  }, [sessionKey, updateCampaign, campaign]);
-
   // Polar Checkout URL from campaign
   const polarCheckoutUrl = campaign?.checkoutUrl || "";
 
@@ -266,6 +257,7 @@ export function PresentationWorkspace() {
 
       <EventNameDialog
         open={eventNameDialogOpen}
+        onOpenChange={setEventNameDialogOpen}
         onSubmit={handleEventNameSubmit}
         isPending={createCampaign.isPending}
       />
@@ -286,8 +278,6 @@ export function PresentationWorkspace() {
         polarCheckoutUrl={polarCheckoutUrl}
         codeType={codeType}
         onCodeTypeChange={handleBarcodeTypeChange}
-        onSave={handleSaveSettings}
-        isSaving={updateCampaign.isPending}
       />
 
       <main className="flex-1 flex overflow-hidden p-6 gap-6 min-h-0">

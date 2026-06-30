@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/stores/uiStore";
 
 const CURRENCIES = [
@@ -63,8 +62,6 @@ interface SettingsDialogProps {
   polarCheckoutUrl: string;
   codeType: "qr" | "zerocode";
   onCodeTypeChange: (value: "qr" | "zerocode") => void;
-  onSave: () => void;
-  isSaving?: boolean;
 }
 
 export function SettingsDialog({
@@ -79,8 +76,6 @@ export function SettingsDialog({
   polarCheckoutUrl,
   codeType,
   onCodeTypeChange,
-  onSave,
-  isSaving,
 }: SettingsDialogProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -189,15 +184,6 @@ export function SettingsDialog({
           </div>
 
           <div className="border-t border-border-subtle" />
-
-          {/* Save Button */}
-          <Button
-            onClick={onSave}
-            disabled={isSaving}
-            className="w-full"
-          >
-            {isSaving ? "Saving..." : "Save Settings"}
-          </Button>
         </div>
       </SheetContent>
     </Sheet>

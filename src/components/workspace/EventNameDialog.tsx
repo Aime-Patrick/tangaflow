@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,21 +13,24 @@ import { Input } from "@/components/ui/input";
 
 interface EventNameDialogProps {
   open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSubmit: (name: string) => void;
   isPending?: boolean;
 }
 
-export function EventNameDialog({ open, onSubmit, isPending }: EventNameDialogProps) {
+export function EventNameDialog({ open, onOpenChange, onSubmit, isPending }: EventNameDialogProps) {
   const [name, setName] = useState("");
 
+  useEffect(() => {
+    if (!open) setName("");
+  }, [open]);
+
   const handleSubmit = () => {
-    if (name.trim()) {
-      onSubmit(name.trim());
-    }
+    onSubmit(name.trim());
   };
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md rounded-none">
         <DialogHeader>
           <DialogTitle>Name Your Event</DialogTitle>
@@ -49,7 +52,7 @@ export function EventNameDialog({ open, onSubmit, isPending }: EventNameDialogPr
 
         <Button
           onClick={handleSubmit}
-          disabled={!name.trim() || isPending}
+          disabled={isPending}
           className="w-full rounded-none"
         >
           {isPending ? "Creating..." : "Start Presentation"}

@@ -67,7 +67,10 @@ export function PresentationPlayer({
   const bottomControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    setSavedFiles(listPPTX());
+    const handle = requestAnimationFrame(() => {
+      setSavedFiles(listPPTX());
+    });
+    return () => cancelAnimationFrame(handle);
   }, []);
 
   useEffect(() => {

@@ -51,11 +51,13 @@ export function QRCodeDisplay({
   // Pre-render inactive code near 90° midpoint
   useEffect(() => {
     const normalizedRotation = ((cardRotation % 360) + 360) % 360;
-    if (normalizedRotation > 60 && normalizedRotation < 120) {
-      setShowBackContent(true);
-    }
-    if (normalizedRotation > 240 && normalizedRotation < 300) {
-      setShowBackContent(true);
+    const shouldPreRender = (normalizedRotation > 60 && normalizedRotation < 120) ||
+                            (normalizedRotation > 240 && normalizedRotation < 300);
+    if (shouldPreRender) {
+      const handle = requestAnimationFrame(() => {
+        setShowBackContent(true);
+      });
+      return () => cancelAnimationFrame(handle);
     }
   }, [cardRotation]);
 
@@ -129,7 +131,7 @@ export function QRCodeDisplay({
     <div className="flex flex-col items-center justify-center h-full">
       <div className="flex flex-col items-center justify-center min-h-0 w-full qr-inner-wrapper">
         {/* Amount label — left on QR, centered on ZeroCode */}
-        <div className="w-full max-w-sm mb-4" style={{ textAlign: labelCodeType === "zerocode" ? "center" : "left" }}>
+        <div className="w-full max-w-sm mb-4 qr-amount-wrapper" style={{ textAlign: labelCodeType === "zerocode" ? "center" : "left" }}>
           <motion.div
             animate={controls}
             className="inline-flex items-center gap-1.5 select-none"
@@ -141,11 +143,11 @@ export function QRCodeDisplay({
               } : {
                 y: 0
               }}
-              className="flex items-center justify-center"
+              className="flex items-center justify-center qr-amount-icon"
             >
               <MoveUp className="h-8 w-8 text-primary text-5xl" />
             </motion.span>
-            <span className="text-3xl font-medium text-text-primary">
+            <span className="text-3xl font-medium text-text-primary qr-amount-text">
               {formatCurrency(displayAmount, currency)}
             </span>
           </motion.div>
@@ -174,7 +176,7 @@ export function QRCodeDisplay({
                 height: "100%",
                 backgroundColor: bgColor,
               }}
-              className="flex items-center justify-center"
+              className="flex items-center justify-center w-full h-full"
             >
               <QRCodeSVG
                 value={content || "https://tangaflow.app"}
@@ -197,7 +199,7 @@ export function QRCodeDisplay({
                 height: "100%",
                 backgroundColor: bgColor,
               }}
-              className="flex items-center justify-center"
+              className="flex items-center justify-center zerocode-wrapper w-full h-full"
             >
               {(showBackContent || showZeroCode) && (
                 <ZeroCode
