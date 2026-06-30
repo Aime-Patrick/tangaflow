@@ -202,8 +202,8 @@ export function QRCodeDisplay({
               {(showBackContent || showZeroCode) && (
                 <ZeroCode
                   value={content || "https://tangaflow.app"}
-                  type="circular"
-                  size={280}
+                  type="morphing"
+                  size={340}
                 />
               )}
             </div>

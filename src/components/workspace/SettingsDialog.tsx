@@ -167,7 +167,7 @@ export function SettingsDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="qr">QR Code</SelectItem>
-                <SelectItem value="zerocode">00Code (Circular)</SelectItem>
+                <SelectItem value="zerocode">0Code</SelectItem>
               </SelectContent>
             </Select>
           </div>
