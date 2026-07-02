@@ -442,7 +442,7 @@ export function PresentationPlayer({
             >
               {isTopHoveringControls ? (
                 <>
-                  <Badge className="bg-bg-elevated/70 text-text-secondary text-xs px-1 py-0.5 font-bold backdrop-blur-sm rounded-none">
+                  <Badge className="bg-bg-elevated/70 text-text-secondary text-xs px-1 py-0.5 font-bold backdrop-blur-sm rounded-md">
                     {activeSlideIndex + 1} / {pptxSlideCount}
                   </Badge>
                   <div className="w-px h-4 bg-border-default/20 mx-0.5" />
@@ -450,7 +450,7 @@ export function PresentationPlayer({
                     variant="ghost"
                     size="icon"
                     onClick={handleReset}
-                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-none"
+                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-md"
                     title="Close presentation"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -485,7 +485,7 @@ export function PresentationPlayer({
                     variant="ghost"
                     size="icon"
                     onClick={handlePrev}
-                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-none"
+                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-md"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
@@ -493,7 +493,7 @@ export function PresentationPlayer({
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsPlaying(!isPlaying)}
-                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-none"
+                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-md"
                   >
                     {isPlaying ? (
                       <Pause className="h-4 w-4" />
@@ -505,7 +505,7 @@ export function PresentationPlayer({
                     variant="ghost"
                     size="icon"
                     onClick={handleNext}
-                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-none"
+                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-md"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -514,7 +514,7 @@ export function PresentationPlayer({
                     variant="ghost"
                     size="icon"
                     onClick={toggleFullscreen}
-                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-none"
+                    className="h-7 w-7 text-text-secondary hover:text-text-primary hover:bg-border-default/10 rounded-md"
                   >
                     {isFullscreen ? (
                       <Minimize2 className="h-3.5 w-3.5" />
@@ -619,7 +619,7 @@ export function PresentationPlayer({
                             <Button
                               size="sm"
                               onClick={() => fileInputRef.current?.click()}
-                              className="bg-accent-primary hover:bg-accent-primary-hover text-bg-base font-bold text-xs h-7 border-none rounded-none"
+                              className="bg-accent-primary hover:bg-accent-primary-hover text-bg-base font-bold text-xs h-7 border-none rounded-md"
                             >
                               <FileUp className="h-3 w-3 mr-1" />
                               Upload New
@@ -640,7 +640,7 @@ export function PresentationPlayer({
                           <CampaignProgressBar raisedAmount={raisedAmount} targetAmount={targetAmount} currency={currency} />
                         </motion.div>
                       )}
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bg-elevated border border-border-subtle shadow-md text-text-primary mb-4">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-md bg-bg-elevated border border-border-subtle shadow-md text-text-primary mb-4">
                         <FileUp className="h-7 w-7" />
                       </div>
                       <h4 className="text-base font-bold text-text-primary">
@@ -682,7 +682,7 @@ export function PresentationPlayer({
                     maxHeight: "100%",
                   }}
                 >
-                  <Skeleton className="w-full h-full rounded-none" />
+                  <Skeleton className="w-full h-full rounded-md" />
                 </div>
               )}
             </AnimatePresence>

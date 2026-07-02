@@ -60,13 +60,13 @@
   --animate-scale-in: scale-in 0.3s ease-out forwards;
 
   /* shadcn/ui theme tokens */
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-sm: 5px;
+  --radius-md: 5px;
+  --radius-lg: 5px;
+  --radius-xl: 5px;
+  --radius-2xl: 5px;
+  --radius-3xl: 5px;
+  --radius-4xl: 5px;
 
   /* shadcn/ui colors */
   --color-card: var(--card);
@@ -138,7 +138,7 @@
   --shadow-glow: 0 0 24px var(--accent-primary-subtle);
 
   /* shadcn/ui base theme */
-  --radius: 0rem;
+  --radius: 5px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -305,7 +305,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: var(--border-default);
-  border-radius: 4px;
+  border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -315,6 +315,50 @@ body {
 /* Selection styling */
 ::selection {
   background: var(--accent-primary-subtle);
+  color: var(--text-primary);
+}
+
+/* Sonner toast overrides */
+[data-sonner-toaster] {
+  --normal-bg: var(--bg-elevated);
+  --normal-border: var(--border-subtle);
+  --normal-text: var(--text-primary);
+  --success-bg: var(--bg-elevated);
+  --success-border: var(--border-subtle);
+  --success-text: var(--text-primary);
+  --error-bg: var(--bg-elevated);
+  --error-border: var(--border-strong);
+  --error-text: var(--text-primary);
+  --warning-bg: var(--bg-elevated);
+  --warning-border: var(--border-subtle);
+  --warning-text: var(--text-primary);
+  --info-bg: var(--bg-elevated);
+  --info-border: var(--border-subtle);
+  --info-text: var(--text-primary);
+  font-family: 'Google Sans', system-ui, -apple-system, sans-serif;
+}
+
+[data-sonner-toast] {
+  border-radius: 5px;
+}
+
+[data-sonner-toast] [data-description] {
+  color: var(--text-secondary);
+}
+
+[data-sonner-toast] [data-button] {
+  border-radius: 5px;
+}
+
+[data-sonner-toast] [data-close-button] {
+  border-radius: 5px;
+  background: var(--bg-base);
+  border-color: var(--border-subtle);
+  color: var(--text-muted);
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  background: var(--bg-hover);
   color: var(--text-primary);
 }
 

@@ -23,7 +23,7 @@ function InviteCard({ children }: { children: React.ReactNode }) {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="rounded-none border border-border-subtle p-8"
+          className="rounded-md border border-border-subtle p-8"
         >
           {children}
         </motion.div>
@@ -55,7 +55,7 @@ function InvitationHeader({
 
 function StatusIcon({ variant }: { variant: "success" | "error" }) {
   return (
-    <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center border border-border-subtle">
+    <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-md border border-border-subtle">
       {variant === "success" ? (
         <Check className="h-5 w-5 text-text-primary" strokeWidth={2} />
       ) : (
@@ -279,7 +279,7 @@ function InvitePageContent() {
           <h1 className="text-xl font-medium text-text-primary">You&apos;re in</h1>
           <p className="mt-1 text-sm text-text-muted">{message}</p>
           <Button
-            className="mt-6 w-full rounded-none"
+            className="mt-6 w-full rounded-md"
             onClick={() => (window.location.href = "/dashboard")}
           >
             Open workspace
@@ -299,7 +299,7 @@ function InvitePageContent() {
           </h1>
           <p className="mt-1 text-sm text-text-muted">{message}</p>
           <Button
-            className="mt-6 w-full rounded-none"
+            className="mt-6 w-full rounded-md"
             variant="outline"
             onClick={() => (window.location.href = "/")}
           >
@@ -328,7 +328,7 @@ function InvitePageContent() {
             new invitation.
           </p>
           <Button
-            className="w-full rounded-none"
+            className="w-full rounded-md"
             onClick={handleSwitchAccount}
           >
             Sign in with {invitation.email}
@@ -353,7 +353,7 @@ function InvitePageContent() {
               type="email"
               value={invitation.email}
               readOnly
-              className="rounded-none bg-bg-muted text-text-muted"
+              className="rounded-md bg-bg-muted text-text-muted"
             />
           </div>
 
@@ -365,7 +365,7 @@ function InvitePageContent() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="rounded-none"
+              className="rounded-md"
             />
           </div>
 
@@ -379,7 +379,7 @@ function InvitePageContent() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className="rounded-none pr-10"
+                className="rounded-md pr-10"
               />
               <button
                 type="button"
@@ -403,7 +403,7 @@ function InvitePageContent() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={8}
-                className="rounded-none pr-10"
+                className="rounded-md pr-10"
               />
               <button
                 type="button"
@@ -419,7 +419,7 @@ function InvitePageContent() {
 
           <Button
             type="submit"
-            className="w-full rounded-none"
+            className="w-full rounded-md"
             disabled={isSubmitting}
           >
             {isSubmitting ? "Creating account..." : "Create account & join"}
@@ -443,7 +443,7 @@ function InvitePageContent() {
             type="email"
             value={invitation.email}
             readOnly
-            className="rounded-none bg-bg-muted text-text-muted"
+            className="rounded-md bg-bg-muted text-text-muted"
           />
         </div>
 
@@ -456,7 +456,7 @@ function InvitePageContent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="rounded-none pr-10"
+              className="rounded-md pr-10"
             />
             <button
               type="button"
@@ -472,7 +472,7 @@ function InvitePageContent() {
 
         <Button
           type="submit"
-          className="w-full rounded-none"
+          className="w-full rounded-md"
           disabled={isSubmitting}
         >
           {isSubmitting ? "Signing in..." : "Sign in to join"}

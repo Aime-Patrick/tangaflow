@@ -81,7 +81,7 @@ export function QRCodeGenerator({ onGenerated }: QRCodeGeneratorProps) {
                   <button
                     key={preset.id}
                     onClick={() => setContentType(preset.contentType)}
-                    className={`flex flex-col items-center gap-2 rounded-lg border p-3 transition-all ${
+                    className={`flex flex-col items-center gap-2 rounded-md border p-3 transition-all ${
                       contentType === preset.contentType
                         ? "border-accent-primary bg-accent-primary-subtle text-accent-primary"
                         : "border-border-default bg-bg-elevated text-text-secondary hover:border-border-strong hover:text-text-primary"
@@ -193,7 +193,7 @@ export function QRCodeGenerator({ onGenerated }: QRCodeGeneratorProps) {
                 />
               </>
             ) : (
-              <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-border-default bg-bg-elevated">
+              <div className="flex h-48 items-center justify-center rounded-md border border-dashed border-border-default bg-bg-elevated">
                 <p className="text-text-muted">
                   Enter content to generate QR code
                 </p>
@@ -208,7 +208,7 @@ export function QRCodeGenerator({ onGenerated }: QRCodeGeneratorProps) {
               <CardTitle className="text-text-primary">Content</CardTitle>
             </CardHeader>
             <CardContent>
-              <code className="block rounded-lg bg-bg-elevated p-3 text-sm text-text-secondary break-all">
+              <code className="block rounded-md bg-bg-elevated p-3 text-sm text-text-secondary break-all">
                 {displayContent}
               </code>
             </CardContent>

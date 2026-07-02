@@ -124,7 +124,7 @@ export function PresentationDetailSheet({
             <Separator className="my-6 bg-border-subtle" />
 
             {/* Preview */}
-            <div className="relative mb-6 aspect-video rounded-xl bg-bg-elevated overflow-hidden">
+            <div className="relative mb-6 aspect-video rounded-md bg-bg-elevated overflow-hidden">
               {presentation.thumbnailUrl ? (
                 <Image
                   src={presentation.thumbnailUrl}

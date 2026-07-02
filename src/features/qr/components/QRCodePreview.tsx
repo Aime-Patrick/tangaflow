@@ -32,7 +32,7 @@ export function QRCodePreview({
 
   return (
     <div
-      className={`flex items-center justify-center rounded-xl bg-bg-elevated p-6 ${className}`}
+      className={`flex items-center justify-center rounded-md bg-bg-elevated p-6 ${className}`}
     >
       <QRCodeSVG
         value={content}

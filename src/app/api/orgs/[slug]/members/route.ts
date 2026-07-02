@@ -10,6 +10,69 @@ const addMemberSchema = z.object({
   role: z.enum(["admin", "member"]).default("member"),
 });
 
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  try {
+    const { slug } = await params;
+    const auth = await getAuthWithContext(slug);
+    if (!auth) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    if (!auth.organization) {
+      return NextResponse.json(
+        { error: "Not a member of this organization" },
+        { status: 403 }
+      );
+    }
+
+    await connectToDatabase();
+
+    const org = await Organization.findOne({ slug });
+    if (!org) {
+      return NextResponse.json(
+        { error: "Organization not found" },
+        { status: 404 }
+      );
+    }
+
+    const userIds = org.members.map(
+      (m: { userId: { toString: () => string } }) => m.userId
+    );
+    const users = await User.find({ _id: { $in: userIds } }).lean();
+    const userMap = new Map(
+      users.map((user) => [user._id.toString(), user])
+    );
+
+    const members = org.members.map(
+      (m: {
+        userId: { toString: () => string };
+        role: string;
+        joinedAt: Date;
+      }) => {
+        const user = userMap.get(m.userId.toString());
+        return {
+          userId: m.userId.toString(),
+          email: user?.email ?? "",
+          name: user?.name ?? "Unknown",
+          role: m.role,
+          joinedAt: m.joinedAt,
+        };
+      }
+    );
+
+    return NextResponse.json(members);
+  } catch (error) {
+    console.error("Error fetching members:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch members" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }

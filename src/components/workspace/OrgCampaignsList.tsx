@@ -20,7 +20,7 @@ export function OrgCampaignsList() {
   }
 
   return (
-    <div className="rounded-none border border-border-subtle p-6">
+    <div className="rounded-md border border-border-subtle p-6">
       <h3 className="mb-1 text-sm font-medium text-text-primary">
         Organization campaigns
       </h3>
@@ -39,7 +39,7 @@ export function OrgCampaignsList() {
           {campaigns.map((campaign) => (
             <div
               key={campaign._id}
-              className="flex items-center justify-between border border-border-subtle p-3"
+              className="flex items-center justify-between rounded-md border border-border-subtle p-3"
             >
               <div>
                 <p className="text-sm font-medium text-text-primary">

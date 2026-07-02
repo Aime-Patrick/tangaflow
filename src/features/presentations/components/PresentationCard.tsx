@@ -40,7 +40,7 @@ export function PresentationCard({
   return (
     <div
       className={cn(
-        "group relative rounded-xl border border-border-subtle bg-bg-card",
+        "group relative rounded-md border border-border-subtle bg-bg-card",
         "transition-all duration-200 hover:border-border-default hover:shadow-md",
         "cursor-pointer",
         className

@@ -31,7 +31,7 @@ export function QRView() {
       />
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "generator" | "history")}>
-        <TabsList className="mb-6 bg-bg-surface border border-border-subtle">
+        <TabsList className="mb-6 rounded-md bg-bg-surface border border-border-subtle">
           <TabsTrigger
             value="generator"
             className="data-[state=active]:bg-accent-primary data-[state=active]:text-bg-base"

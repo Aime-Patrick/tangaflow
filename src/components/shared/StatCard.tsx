@@ -17,7 +17,7 @@ export function StatCard({ label, value, trend, icon, className }: StatCardProps
   return (
     <div
       className={cn(
-        "rounded-xl border border-border-subtle bg-bg-card p-5",
+        "rounded-md border border-border-subtle bg-bg-card p-5",
         "transition-all duration-200 hover:border-border-default hover:shadow-md",
         className
       )}
@@ -45,7 +45,7 @@ export function StatCard({ label, value, trend, icon, className }: StatCardProps
           )}
         </div>
         {icon && (
-          <div className="rounded-lg bg-accent-primary-subtle p-3 text-accent-primary">
+          <div className="rounded-md bg-accent-primary-subtle p-3 text-accent-primary">
             {icon}
           </div>
         )}

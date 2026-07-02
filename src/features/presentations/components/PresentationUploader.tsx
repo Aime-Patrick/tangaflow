@@ -119,7 +119,7 @@ export function PresentationUploader({ open, onOpenChange }: PresentationUploade
         <div className="space-y-4">
           {/* File upload area */}
           <div
-            className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-colors ${
+            className={`relative flex flex-col items-center justify-center rounded-md border-2 border-dashed p-6 transition-colors ${
               dragActive
                 ? "border-accent-primary bg-accent-primary-subtle"
                 : file

@@ -2,15 +2,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchMembers, addMember, removeMember, updateMemberRole } from "../api/members";
 import type { AddMemberInput } from "../api/members";
 import type { OrgRole } from "@/models/Organization";
+import { orgKeys } from "../queryKeys";
 
-export const orgKeys = {
-  members: (slug: string) => ["org", slug, "members"] as const,
-};
+const ORG_STALE_TIME = 1000 * 60 * 5;
 
 export function useMembers(slug: string) {
   return useQuery({
     queryKey: orgKeys.members(slug),
     queryFn: () => fetchMembers(slug),
+    staleTime: ORG_STALE_TIME,
+    enabled: Boolean(slug),
   });
 }
 

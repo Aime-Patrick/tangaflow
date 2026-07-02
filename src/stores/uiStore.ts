@@ -21,7 +21,7 @@ export const useUIStore = create<UIState>((set) => ({
   sidebarExpanded: false,
   activeModule: "presentations",
   activeSheet: null,
-  theme: "dark",
+  theme: "light",
 
   toggleSidebar: () => set((state) => ({ sidebarExpanded: !state.sidebarExpanded })),
   setSidebarExpanded: (expanded) => set({ sidebarExpanded: expanded }),

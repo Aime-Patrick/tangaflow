@@ -23,8 +23,10 @@ import {
   useAddMember,
   useRemoveMember,
   useUpdateMemberRole,
+  useInvitations,
+  useInviteMember,
+  useRevokeInvitation,
 } from "@/features/orgs";
-import { useInvitations, useInviteMember, useRevokeInvitation } from "@/features/orgs/api/invitations";
 import { useAuth } from "@/lib/auth-context";
 import { usePermission } from "@/hooks/use-permission";
 import type { OrgRole } from "@/models/Organization";
@@ -35,7 +37,7 @@ interface MembersTabProps {
 
 export function MembersTab({ organizationSlug }: MembersTabProps) {
   const { user } = useAuth();
-  const { data: members, isLoading } = useMembers(organizationSlug);
+  const { data: members, isPending: isMembersPending } = useMembers(organizationSlug);
   const { data: invitations } = useInvitations(organizationSlug);
   const addMemberMutation = useAddMember(organizationSlug);
   const removeMemberMutation = useRemoveMember(organizationSlug);
@@ -99,7 +101,7 @@ export function MembersTab({ organizationSlug }: MembersTabProps) {
     }
   };
 
-  if (isLoading) {
+  if (isMembersPending && !members) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-border-default border-t-transparent" />
@@ -120,7 +122,7 @@ export function MembersTab({ organizationSlug }: MembersTabProps) {
         {isAdmin && (
           <Button
             size="sm"
-            className="rounded-none"
+            className="rounded-md"
             onClick={() => setAddDialogOpen(true)}
           >
             <UserPlus className="mr-2 h-4 w-4" />
@@ -138,7 +140,7 @@ export function MembersTab({ organizationSlug }: MembersTabProps) {
           {invitations.map((invitation) => (
             <div
               key={invitation._id}
-              className="flex items-center justify-between rounded-none border border-border-subtle p-4 bg-bg-muted/50"
+              className="flex items-center justify-between rounded-md border border-border-subtle p-4 bg-bg-muted/50"
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-bg-elevated">
@@ -175,7 +177,7 @@ export function MembersTab({ organizationSlug }: MembersTabProps) {
         {members?.map((member) => (
           <div
             key={member.userId}
-            className="flex items-center justify-between rounded-none border border-border-subtle p-4"
+            className="flex items-center justify-between rounded-md border border-border-subtle p-4"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-bg-elevated">
@@ -197,7 +199,7 @@ export function MembersTab({ organizationSlug }: MembersTabProps) {
                   value={member.role}
                   onValueChange={(v) => handleRoleChange(member.userId, v as OrgRole)}
                 >
-                  <SelectTrigger className="w-28 h-8 rounded-none text-xs">
+                  <SelectTrigger className="w-28 h-8 rounded-md text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -239,7 +241,7 @@ export function MembersTab({ organizationSlug }: MembersTabProps) {
 
       {/* Invite Member Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="rounded-none backdrop-blur-md bg-bg-elevated/90">
+        <DialogContent className="rounded-md backdrop-blur-md bg-bg-elevated/90">
           <DialogHeader>
             <DialogTitle>Invite Member</DialogTitle>
             <DialogDescription>
@@ -256,7 +258,7 @@ export function MembersTab({ organizationSlug }: MembersTabProps) {
                 value={newMemberEmail}
                 onChange={(e) => setNewMemberEmail(e.target.value)}
                 placeholder="member@example.com"
-                className="rounded-none"
+                className="rounded-md"
                 required
               />
             </div>
@@ -269,7 +271,7 @@ export function MembersTab({ organizationSlug }: MembersTabProps) {
                 value={newMemberRole}
                 onValueChange={(v) => setNewMemberRole(v as OrgRole)}
               >
-                <SelectTrigger className="w-full rounded-none">
+                <SelectTrigger className="w-full rounded-md">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -295,14 +297,14 @@ export function MembersTab({ organizationSlug }: MembersTabProps) {
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-none"
+                className="rounded-md"
                 onClick={() => setAddDialogOpen(false)}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="rounded-none"
+                className="rounded-md"
                 disabled={inviteMemberMutation.isPending}
               >
                 {inviteMemberMutation.isPending ? "Sending..." : "Send Invitation"}

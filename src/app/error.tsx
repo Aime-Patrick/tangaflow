@@ -17,7 +17,7 @@ export default function Error({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-bg-base text-center">
-      <div className="max-w-md w-full p-8 rounded-2xl border border-border-subtle bg-bg-card shadow-lg space-y-6">
+      <div className="max-w-md w-full p-8 rounded-md border border-border-subtle bg-bg-card shadow-lg space-y-6">
         <div className="w-12 h-12 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto">
           <svg
             className="w-6 h-6"

@@ -13,12 +13,12 @@ export function EmptyState({ icon, title, description, action, className }: Empt
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-2xl border border-dashed border-border-default bg-bg-surface p-12",
+        "flex flex-col items-center justify-center rounded-md border border-dashed border-border-default bg-bg-surface p-12",
         className
       )}
     >
       {/* Dot grid background */}
-      <div className="absolute inset-0 rounded-2xl opacity-30 pointer-events-none"
+      <div className="absolute inset-0 rounded-md opacity-30 pointer-events-none"
         style={{
           backgroundImage: "radial-gradient(circle, var(--border-subtle) 1px, transparent 1px)",
           backgroundSize: "24px 24px",

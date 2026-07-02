@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const themeScript = `
   (function() {
     try {
-      var theme = localStorage.getItem('tangaflow-theme') || 'dark';
+      var theme = localStorage.getItem('tangaflow-theme') || 'light';
       document.documentElement.classList.remove('light', 'dark');
       document.documentElement.classList.add(theme);
     } catch(e) {}
@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("h-full dark")} suppressHydrationWarning>
+    <html lang="en" className={cn("h-full light")} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

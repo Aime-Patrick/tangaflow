@@ -31,7 +31,7 @@ export function EventNameDialog({ open, onOpenChange, onSubmit, isPending }: Eve
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-none">
+      <DialogContent className="sm:max-w-md rounded-md">
         <DialogHeader>
           <DialogTitle>Name Your Event</DialogTitle>
           <DialogDescription>
@@ -53,7 +53,7 @@ export function EventNameDialog({ open, onOpenChange, onSubmit, isPending }: Eve
         <Button
           onClick={handleSubmit}
           disabled={isPending}
-          className="w-full rounded-none"
+          className="w-full rounded-md"
         >
           {isPending ? "Creating..." : "Start Presentation"}
         </Button>

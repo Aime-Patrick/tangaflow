@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   User,
   Settings,
@@ -84,13 +84,26 @@ export function ProfileSheet({
   codeType = "qr",
   onCodeTypeChange,
 }: ProfileSheetProps) {
-  const { user, organization } = useAuth();
+  const { user, organization, refresh } = useAuth();
   const canManageCampaigns = usePermission("manage_campaigns");
   const canViewCampaigns = usePermission("view_campaigns");
   const canManageMembers = usePermission("manage_members");
   const [activeTab, setActiveTab] = useState<TabValue>(defaultTab);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [hasOpenedMembers, setHasOpenedMembers] = useState(defaultTab === "members");
+
+  useEffect(() => {
+    if (open && !user) {
+      refresh();
+    }
+  }, [open, user, refresh]);
+
+  useEffect(() => {
+    if (activeTab === "members") {
+      setHasOpenedMembers(true);
+    }
+  }, [activeTab]);
 
   // Adjust default tab if user doesn't have permission
   const effectiveTab = (() => {
@@ -157,8 +170,10 @@ export function ProfileSheet({
             />
           </div>
         )}
-        {effectiveTab === "members" && canManageMembers && organization && (
-          <MembersTab organizationSlug={organization.slug} />
+        {hasOpenedMembers && canManageMembers && organization && (
+          <div className={effectiveTab === "members" ? undefined : "hidden"}>
+            <MembersTab organizationSlug={organization.slug} />
+          </div>
         )}
         {effectiveTab === "settings" && (
           <SettingsContent
@@ -201,7 +216,7 @@ function ProfileContent({ user, organization }: { user: any; organization: any }
   return (
     <div className="space-y-6">
       {/* User Info */}
-      <div className="rounded-none border border-border-subtle p-6">
+      <div className="rounded-md border border-border-subtle p-6">
         <h3 className="mb-4 text-sm font-medium text-text-primary">
           Personal Information
         </h3>
@@ -225,7 +240,7 @@ function ProfileContent({ user, organization }: { user: any; organization: any }
 
       {/* Organization Info */}
       {organization && (
-        <div className="rounded-none border border-border-subtle p-6">
+        <div className="rounded-md border border-border-subtle p-6">
           <h3 className="mb-4 text-sm font-medium text-text-primary">
             Organization
           </h3>
@@ -279,7 +294,7 @@ function CampaignContent({
   return (
     <div className="space-y-6">
       {/* Event Name */}
-      <div className="rounded-none border border-border-subtle p-6">
+      <div className="rounded-md border border-border-subtle p-6">
         <h3 className="mb-4 text-sm font-medium text-text-primary">
           Event Details
         </h3>
@@ -293,14 +308,14 @@ function CampaignContent({
               value={eventName}
               onChange={(e) => onEventNameChange?.(e.target.value)}
               placeholder="e.g., Sunday Service"
-              className="w-full h-8 border border-border-default bg-bg-elevated px-2.5 text-xs font-semibold text-text-primary outline-none focus:ring-2 focus:ring-accent-primary/50"
+              className="w-full h-8 rounded-md border border-border-default bg-bg-elevated px-2.5 text-xs font-semibold text-text-primary outline-none focus:ring-2 focus:ring-accent-primary/50"
             />
           </div>
         </div>
       </div>
 
       {/* Fundraising */}
-      <div className="rounded-none border border-border-subtle p-6">
+      <div className="rounded-md border border-border-subtle p-6">
         <h3 className="mb-4 text-sm font-medium text-text-primary">
           Fundraising
         </h3>
@@ -340,14 +355,14 @@ function CampaignContent({
               type="number"
               value={targetAmount}
               onChange={(e) => onTargetChange?.(Number(e.target.value))}
-              className="w-full h-8 border border-border-default bg-bg-elevated px-2.5 text-xs font-semibold text-text-primary outline-none focus:ring-2 focus:ring-accent-primary/50"
+              className="w-full h-8 rounded-md border border-border-default bg-bg-elevated px-2.5 text-xs font-semibold text-text-primary outline-none focus:ring-2 focus:ring-accent-primary/50"
             />
           </div>
         </div>
       </div>
 
       {/* Barcode */}
-      <div className="rounded-none border border-border-subtle p-6">
+      <div className="rounded-md border border-border-subtle p-6">
         <h3 className="mb-4 text-sm font-medium text-text-primary">
           Barcode Type
         </h3>
@@ -374,7 +389,7 @@ function CampaignContent({
               type="text"
               value={polarCheckoutUrl}
               readOnly
-              className="w-full h-8 border border-border-default bg-bg-muted px-2.5 text-xs font-mono text-text-muted cursor-not-allowed"
+              className="w-full h-8 rounded-md border border-border-default bg-bg-muted px-2.5 text-xs font-mono text-text-muted cursor-not-allowed"
             />
             <p className="text-[10px] text-text-muted">
               Donors scan the QR to pay via Polar
@@ -400,7 +415,7 @@ function ThemeButton({
   return (
     <button
       onClick={() => setTheme(value)}
-      className={`flex-1 h-8 px-4 border text-xs font-semibold transition-colors ${
+      className={`flex-1 h-8 rounded-md px-4 border text-xs font-semibold transition-colors ${
         isActive
           ? "border-accent-primary bg-accent-primary text-bg-base"
           : "border-border-default bg-bg-elevated text-text-secondary hover:text-text-primary hover:border-border-strong"
@@ -415,7 +430,7 @@ function SettingsContent({ onChangePassword, onDeleteAccount }: { onChangePasswo
   return (
     <div className="space-y-6">
       {/* Appearance */}
-      <div className="rounded-none border border-border-subtle p-6">
+      <div className="rounded-md border border-border-subtle p-6">
         <h3 className="mb-4 text-sm font-medium text-text-primary">
           Appearance
         </h3>
@@ -436,7 +451,7 @@ function SettingsContent({ onChangePassword, onDeleteAccount }: { onChangePasswo
       </div>
 
       {/* Account */}
-      <div className="rounded-none border border-border-subtle p-6">
+      <div className="rounded-md border border-border-subtle p-6">
         <h3 className="mb-4 text-sm font-medium text-text-primary">Account</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -448,7 +463,7 @@ function SettingsContent({ onChangePassword, onDeleteAccount }: { onChangePasswo
             </div>
             <Button
               variant="outline"
-              className="rounded-none h-8 px-4 text-xs"
+              className="rounded-md h-8 px-4 text-xs"
               onClick={onChangePassword}
             >
               Update
@@ -463,7 +478,7 @@ function SettingsContent({ onChangePassword, onDeleteAccount }: { onChangePasswo
             </div>
             <Button
               variant="destructive"
-              className="rounded-none h-8 px-4 text-xs"
+              className="rounded-md h-8 px-4 text-xs"
               onClick={onDeleteAccount}
             >
               Delete
@@ -496,7 +511,7 @@ function PasswordInput({
           type={showPassword ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="rounded-none pr-10"
+          className="rounded-md pr-10"
           required={required}
         />
         <button
@@ -583,7 +598,7 @@ function ChangePasswordDialog({
   if (showWarning) {
     return (
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="rounded-none backdrop-blur-md bg-bg-elevated/90">
+        <DialogContent className="rounded-md backdrop-blur-md bg-bg-elevated/90">
           <DialogHeader>
             <DialogTitle>Password Changed</DialogTitle>
             <DialogDescription>
@@ -594,7 +609,7 @@ function ChangePasswordDialog({
           <div className="flex justify-end gap-2 mt-4">
             <Button
               variant="default"
-              className="rounded-none"
+              className="rounded-md"
               onClick={handleLogout}
             >
               Logout & Login Again
@@ -607,7 +622,7 @@ function ChangePasswordDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="rounded-none backdrop-blur-md bg-bg-elevated/90">
+      <DialogContent className="rounded-md backdrop-blur-md bg-bg-elevated/90">
         <DialogHeader>
           <DialogTitle>Change Password</DialogTitle>
           <DialogDescription>
@@ -640,7 +655,7 @@ function ChangePasswordDialog({
             <Button
               type="button"
               variant="outline"
-              className="rounded-none"
+              className="rounded-md"
               onClick={() => onOpenChange(false)}
             >
               Cancel
@@ -648,7 +663,7 @@ function ChangePasswordDialog({
             <Button
               type="submit"
               variant="default"
-              className="rounded-none"
+              className="rounded-md"
               disabled={isPending}
             >
               {isPending ? "Changing..." : "Change Password"}
@@ -720,7 +735,7 @@ function DeleteAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="rounded-none backdrop-blur-md bg-bg-elevated/90">
+      <DialogContent className="rounded-md backdrop-blur-md bg-bg-elevated/90">
         <DialogHeader>
           <DialogTitle className="text-red-500">Delete Account</DialogTitle>
           <DialogDescription>
@@ -729,7 +744,7 @@ function DeleteAccountDialog({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="rounded-none border border-red-500/30 bg-red-500/10 p-4">
+          <div className="rounded-md border border-red-500/30 bg-red-500/10 p-4">
             <p className="text-xs text-text-primary">
               Type <span className="font-bold text-red-500">{organizationName}</span> to confirm deletion.
             </p>
@@ -743,7 +758,7 @@ function DeleteAccountDialog({
               value={confirmInput}
               onChange={(e) => setConfirmInput(e.target.value)}
               placeholder={organizationName}
-              className="rounded-none"
+              className="rounded-md"
               required
             />
           </div>
@@ -754,7 +769,7 @@ function DeleteAccountDialog({
             <Button
               type="button"
               variant="outline"
-              className="rounded-none"
+              className="rounded-md"
               onClick={() => onOpenChange(false)}
             >
               Cancel
@@ -762,7 +777,7 @@ function DeleteAccountDialog({
             <Button
               type="submit"
               variant="destructive"
-              className="rounded-none"
+              className="rounded-md"
               disabled={isPending || !isMatch}
             >
               {isPending ? "Deleting..." : "Delete Account"}

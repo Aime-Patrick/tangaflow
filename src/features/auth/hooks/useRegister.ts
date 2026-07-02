@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 import { register } from "../api/auth";
 import { authKeys } from "../queryKeys";
 import type { RegisterInput } from "../types";
@@ -7,6 +8,7 @@ import type { RegisterInput } from "../types";
 export function useRegister() {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { refresh } = useAuth();
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("invite");
 
@@ -14,6 +16,7 @@ export function useRegister() {
     mutationFn: (input: RegisterInput) => register(input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: authKeys.session() });
+      await refresh();
 
       if (inviteToken) {
         try {

@@ -1,28 +1,15 @@
-"use client";
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getInvitations } from "../api/getInvitations";
+import { orgKeys } from "../queryKeys";
 
-const BASE_URL = "/api/orgs";
-
-export interface Invitation {
-  _id: string;
-  email: string;
-  role: string;
-  status: string;
-  token: string;
-  expiresAt: string;
-  createdAt: string;
-}
+const ORG_STALE_TIME = 1000 * 60 * 5;
 
 export function useInvitations(slug: string) {
   return useQuery({
-    queryKey: ["invitations", slug],
-    queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/${slug}/invitations`);
-      if (!res.ok) throw new Error("Failed to fetch invitations");
-      const data = await res.json();
-      return data.invitations as Invitation[];
-    },
+    queryKey: orgKeys.invitations(slug),
+    queryFn: () => getInvitations(slug),
+    staleTime: ORG_STALE_TIME,
+    enabled: Boolean(slug),
   });
 }
 
@@ -31,7 +18,7 @@ export function useInviteMember(slug: string) {
 
   return useMutation({
     mutationFn: async ({ email, role }: { email: string; role: string }) => {
-      const res = await fetch(`${BASE_URL}/${slug}/invitations`, {
+      const res = await fetch(`/api/orgs/${slug}/invitations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, role }),
@@ -43,7 +30,7 @@ export function useInviteMember(slug: string) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["invitations", slug] });
+      queryClient.invalidateQueries({ queryKey: orgKeys.invitations(slug) });
     },
   });
 }
@@ -53,7 +40,7 @@ export function useRevokeInvitation(slug: string) {
 
   return useMutation({
     mutationFn: async (token: string) => {
-      const res = await fetch(`${BASE_URL}/${slug}/invitations/${token}/revoke`, {
+      const res = await fetch(`/api/orgs/${slug}/invitations/${token}/revoke`, {
         method: "POST",
       });
       if (!res.ok) {
@@ -63,7 +50,7 @@ export function useRevokeInvitation(slug: string) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["invitations", slug] });
+      queryClient.invalidateQueries({ queryKey: orgKeys.invitations(slug) });
     },
   });
 }

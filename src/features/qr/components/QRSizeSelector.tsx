@@ -23,7 +23,7 @@ export function QRSizeSelector({ value, onChange, className }: QRSizeSelectorPro
           key={size.value}
           onClick={() => onChange(size.value)}
           className={cn(
-            "flex flex-col items-center rounded-lg border px-4 py-3 transition-all",
+            "flex flex-col items-center rounded-md border px-4 py-3 transition-all",
             value === size.value
               ? "border-accent-primary bg-accent-primary-subtle text-accent-primary"
               : "border-border-default bg-bg-elevated text-text-secondary hover:border-border-strong hover:text-text-primary"

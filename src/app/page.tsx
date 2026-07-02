@@ -97,7 +97,7 @@ function LoginForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) {
   };
 
   return (
-    <div className="rounded-none border border-border-subtle p-8">
+    <div className="rounded-md border border-border-subtle p-8">
       <div className="text-center mb-6">
         <h1 className="text-xl font-medium text-text-primary">Welcome back</h1>
         <p className="text-sm text-text-muted mt-1">Sign in to your account</p>
@@ -112,7 +112,7 @@ function LoginForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="rounded-none"
+            className="rounded-md"
           />
         </div>
 
@@ -125,7 +125,7 @@ function LoginForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="rounded-none pr-10"
+              className="rounded-md pr-10"
             />
             <button
               type="button"
@@ -146,11 +146,7 @@ function LoginForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) {
           </div>
         </div>
 
-        {loginMutation.isError && (
-          <p className="text-sm text-red-500">{loginMutation.error.message}</p>
-        )}
-
-        <Button type="submit" className="w-full rounded-none" disabled={loginMutation.isPending}>
+        <Button type="submit" className="w-full rounded-md" disabled={loginMutation.isPending}>
           {loginMutation.isPending ? "Signing in..." : "Sign in"}
         </Button>
       </form>
@@ -168,7 +164,7 @@ function LoginForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) {
         <Button
           type="button"
           variant="outline"
-          className="w-full rounded-none"
+          className="w-full rounded-md"
           onClick={() => window.location.href = "/api/auth/oauth/google"}
         >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -182,7 +178,7 @@ function LoginForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) {
         <Button
           type="button"
           variant="outline"
-          className="w-full rounded-none"
+          className="w-full rounded-md"
           onClick={() => window.location.href = "/api/auth/oauth/github"}
         >
           <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -216,7 +212,7 @@ function RegisterForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) 
   };
 
   return (
-    <div className="rounded-none border border-border-subtle p-8">
+    <div className="rounded-md border border-border-subtle p-8">
       <div className="text-center mb-6">
         <h1 className="text-xl font-medium text-text-primary">Create account</h1>
         <p className="text-sm text-text-muted mt-1">Get started with TangaFlow</p>
@@ -231,7 +227,7 @@ function RegisterForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) 
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="rounded-none"
+            className="rounded-md"
           />
         </div>
 
@@ -243,7 +239,7 @@ function RegisterForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) 
             value={orgName}
             onChange={(e) => setOrgName(e.target.value)}
             required
-            className="rounded-none"
+            className="rounded-md"
           />
         </div>
 
@@ -255,7 +251,7 @@ function RegisterForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="rounded-none"
+            className="rounded-md"
           />
         </div>
 
@@ -268,7 +264,7 @@ function RegisterForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="rounded-none pr-10"
+              className="rounded-md pr-10"
             />
             <button
               type="button"
@@ -284,7 +280,7 @@ function RegisterForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) 
           <p className="text-sm text-red-500">{registerMutation.error.message}</p>
         )}
 
-        <Button type="submit" className="w-full rounded-none" disabled={registerMutation.isPending}>
+        <Button type="submit" className="w-full rounded-md" disabled={registerMutation.isPending}>
           {registerMutation.isPending ? "Creating..." : "Create Account"}
         </Button>
       </form>
@@ -334,7 +330,7 @@ function ForgotForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) {
 
   if (isSuccess) {
     return (
-      <div className="rounded-none border border-border-subtle p-8">
+      <div className="rounded-md border border-border-subtle p-8">
         <div className="text-center">
           <Mail className="h-12 w-12 text-text-muted mx-auto mb-4" />
           <h1 className="text-xl font-medium text-text-primary mb-2">Check Your Email</h1>
@@ -342,7 +338,7 @@ function ForgotForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) {
             We sent a password reset link to{" "}
             <span className="text-text-primary font-medium">{email}</span>
           </p>
-          <Button variant="outline" className="rounded-none" onClick={() => onNavigate("login")}>
+          <Button variant="outline" className="rounded-md" onClick={() => onNavigate("login")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Login
           </Button>
@@ -352,7 +348,7 @@ function ForgotForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) {
   }
 
   return (
-    <div className="rounded-none border border-border-subtle p-8">
+    <div className="rounded-md border border-border-subtle p-8">
       <div className="text-center mb-6">
         <Mail className="h-10 w-10 text-text-muted mx-auto mb-3" />
         <h1 className="text-xl font-medium text-text-primary">Forgot Password</h1>
@@ -367,14 +363,14 @@ function ForgotForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="rounded-none"
+            className="rounded-md"
             required
           />
         </div>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
 
-        <Button type="submit" className="w-full rounded-none" disabled={isPending}>
+        <Button type="submit" className="w-full rounded-md" disabled={isPending}>
           {isPending ? "Sending..." : "Send Reset Link"}
         </Button>
       </form>
