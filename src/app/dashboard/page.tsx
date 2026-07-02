@@ -2,6 +2,6 @@
 
 import { PresentationWorkspace } from "@/components/workspace/PresentationWorkspace";
 
-export function DashboardShell() {
+export default function DashboardPage() {
   return <PresentationWorkspace />;
 }

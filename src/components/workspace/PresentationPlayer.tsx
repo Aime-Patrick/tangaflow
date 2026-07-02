@@ -392,7 +392,7 @@ export function PresentationPlayer({
   };
 
   return (
-    <div className="flex flex-col items-center justify-start h-full space-y-4 min-h-0 w-full">
+    <div className="flex flex-col items-center justify-start h-full min-h-0 w-full">
       {view === "loaded" && raisedAmount > 0 && (
         <motion.div
           layoutId="progress-bar"
@@ -408,7 +408,7 @@ export function PresentationPlayer({
         {/* PPTX container - always in DOM so ref is available, hidden conditionally */}
         <div
           id="presentation-viewport"
-          className={`relative overflow-hidden shadow-xl bg-bg-base ${view === "loaded" ? "block animate-[fadeIn_0.4s_ease-out]" : "hidden"}`}
+          className={`relative overflow-hidden shadow-xl ${view === "loaded" ? "block animate-[fadeIn_0.4s_ease-out]" : "hidden"}`}
           style={{
             aspectRatio: "16/9",
             // min() picks: full panel width OR height-derived width — whichever is smaller

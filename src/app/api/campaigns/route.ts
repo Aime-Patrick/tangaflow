@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Campaign } from "@/models/Campaign";
+import { getSessionWithOrganization } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
+import {
+  getCampaignListFilter,
+} from "@/lib/campaign-access";
 import { z } from "zod";
 
 const POLAR_BASE_URL =
@@ -53,8 +58,28 @@ async function createPolarCheckoutSession(
 
 export async function GET() {
   try {
+    const auth = await getSessionWithOrganization();
+    if (!auth?.organization) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    if (!hasPermission(auth.organization.role, "view_campaigns")) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+    }
+
     await connectToDatabase();
-    const campaigns = await Campaign.find().sort({ createdAt: -1 }).lean();
+
+    const filter = getCampaignListFilter(
+      auth.organization._id,
+      auth.user._id,
+      auth.organization.role
+    );
+
+    const campaigns = await Campaign.find(filter)
+      .populate("createdBy", "name email")
+      .sort({ createdAt: -1 })
+      .lean();
+
     return NextResponse.json(campaigns);
   } catch (error) {
     console.error("Error fetching campaigns:", error);
@@ -67,6 +92,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await getSessionWithOrganization();
+    if (!auth?.organization) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    if (!hasPermission(auth.organization.role, "create_campaigns")) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+    }
+
     await connectToDatabase();
     const body = await request.json();
 
@@ -81,7 +115,6 @@ export async function POST(request: Request) {
     const { name, targetAmount, currency } = parsed.data;
     const sessionKey = generateSessionKey();
 
-    // Create Polar Checkout Session
     const checkoutUrl = await createPolarCheckoutSession(sessionKey, currency);
 
     const campaign = await Campaign.create({
@@ -91,6 +124,8 @@ export async function POST(request: Request) {
       raisedAmount: 0,
       currency,
       checkoutUrl: checkoutUrl || "",
+      organizationId: auth.organization._id,
+      createdBy: auth.user._id,
     });
 
     return NextResponse.json(campaign, { status: 201 });

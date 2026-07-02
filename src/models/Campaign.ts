@@ -7,6 +7,8 @@ export interface ICampaign {
   raisedAmount: number;
   currency: string;
   checkoutUrl: string;
+  organizationId: mongoose.Types.ObjectId;
+  createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +44,18 @@ const CampaignSchema = new Schema(
       type: String,
       default: "",
     },
+    organizationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
+      index: true,
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
     barcodeType: {
       type: String,
       enum: ["qr", "zerocode"],
@@ -52,6 +66,8 @@ const CampaignSchema = new Schema(
     timestamps: true,
   }
 );
+
+CampaignSchema.index({ organizationId: 1, createdBy: 1 });
 
 export const Campaign =
   mongoose.models.Campaign || mongoose.model<ICampaign>("Campaign", CampaignSchema);

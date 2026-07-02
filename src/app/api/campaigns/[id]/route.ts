@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Campaign } from "@/models/Campaign";
+import { getSessionWithOrganization } from "@/lib/auth";
+import { canManageCampaign, canViewCampaign } from "@/lib/campaign-access";
 import { z } from "zod";
 
 const updateCampaignSchema = z.object({
@@ -15,6 +17,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getSessionWithOrganization();
+    if (!auth?.organization) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
     await connectToDatabase();
     const { id } = await params;
 
@@ -25,6 +32,17 @@ export async function GET(
         { error: "Campaign not found" },
         { status: 404 }
       );
+    }
+
+    if (
+      !canViewCampaign(
+        auth.organization.role,
+        auth.user._id,
+        auth.organization._id,
+        campaign
+      )
+    ) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
     }
 
     return NextResponse.json(campaign);
@@ -42,8 +60,33 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getSessionWithOrganization();
+    if (!auth?.organization) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
     await connectToDatabase();
     const { id } = await params;
+
+    const existing = await Campaign.findById(id);
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 }
+      );
+    }
+
+    if (
+      !canManageCampaign(
+        auth.organization.role,
+        auth.user._id,
+        auth.organization._id,
+        existing
+      )
+    ) {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+    }
+
     const body = await request.json();
 
     const parsed = updateCampaignSchema.safeParse(body);
@@ -67,13 +110,6 @@ export async function PATCH(
       new: true,
       runValidators: true,
     }).lean();
-
-    if (!campaign) {
-      return NextResponse.json(
-        { error: "Campaign not found" },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json(campaign);
   } catch (error) {

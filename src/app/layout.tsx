@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: "TangaFlow",
@@ -29,7 +30,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full bg-bg-base text-text-primary antialiased" suppressHydrationWarning>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <Providers>{children}</Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -10,6 +10,7 @@ export function useCreateCampaign() {
     mutationFn: createCampaign,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: campaignKeys.detail(data._id) });
+      queryClient.invalidateQueries({ queryKey: campaignKeys.lists() });
       toast.success("Campaign created successfully");
     },
     onError: () => {

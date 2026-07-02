@@ -6,6 +6,8 @@ export interface Campaign {
   currency: string;
   checkoutUrl: string;
   barcodeType: "qr" | "zerocode";
+  organizationId: string;
+  createdBy: string | { _id: string; name: string; email: string };
   createdAt: string;
   updatedAt: string;
 }

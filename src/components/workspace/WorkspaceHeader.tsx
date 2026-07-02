@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Presentation, Settings, Maximize2, Minimize2, Plus } from "lucide-react";
+import { Settings, Maximize2, Minimize2, Plus, User, LogOut, Sun, Moon } from "lucide-react";
+import { useUIStore } from "@/stores/uiStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,19 +11,42 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useLogout } from "@/features/auth";
 
 type LayoutPreset = "default" | "focus" | null;
 
 interface WorkspaceHeaderProps {
-  onSettingsOpen?: () => void;
   onNewEvent?: () => void;
+  onProfileOpen?: () => void;
+  onSettingsOpen?: () => void;
   layoutPreset?: LayoutPreset;
   onLayoutChange?: (preset: LayoutPreset) => void;
   isPptLoaded?: boolean;
 }
 
-export function WorkspaceHeader({ onSettingsOpen, onNewEvent, layoutPreset, onLayoutChange, isPptLoaded }: WorkspaceHeaderProps) {
+export function WorkspaceHeader({
+  onNewEvent,
+  onProfileOpen,
+  onSettingsOpen,
+  layoutPreset,
+  onLayoutChange,
+  isPptLoaded,
+}: WorkspaceHeaderProps) {
   const isDefault = layoutPreset === "default" || layoutPreset === null;
+  const logoutMutation = useLogout();
+  const theme = useUIStore((s) => s.theme);
+  const setTheme = useUIStore((s) => s.setTheme);
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   const toggleLayout = () => {
     if (onLayoutChange) {
@@ -104,15 +128,43 @@ export function WorkspaceHeader({ onSettingsOpen, onNewEvent, layoutPreset, onLa
                 <Button
                   variant="ghost"
                   size="icon-xs"
-                  onClick={onSettingsOpen}
+                  onClick={toggleTheme}
                   className="text-text-muted hover:text-text-primary"
                 />
               }
             >
-              <Settings className="h-4 w-4" />
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </TooltipTrigger>
-            <TooltipContent>Settings</TooltipContent>
+            <TooltipContent>{theme === "dark" ? "Light Mode" : "Dark Mode"}</TooltipContent>
           </Tooltip>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-text-secondary hover:text-text-primary"
+                />
+              }
+            >
+              <User className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={8}>
+              <DropdownMenuItem onClick={onProfileOpen}>
+                <User className="h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onSettingsOpen}>
+                <Settings className="h-4 w-4" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => logoutMutation.mutate()} variant="destructive">
+                <LogOut className="h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
     </TooltipProvider>

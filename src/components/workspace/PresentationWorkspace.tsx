@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useMotionValue, useTransform, animate } from "
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { PresentationPlayer } from "./PresentationPlayer";
 import { QRCodeDisplay } from "./QRCodeDisplay";
-import { SettingsDialog } from "./SettingsDialog";
+import { ProfileSheet } from "./ProfileSheet";
 import { EventNameDialog } from "./EventNameDialog";
 import { useCampaign, useCreateCampaign, useUpdateCampaign } from "@/features/campaign";
 import { debounce, formatDate } from "@/lib/utils";
@@ -33,7 +33,8 @@ export function PresentationWorkspace() {
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetTab, setSheetTab] = useState<"profile" | "campaign" | "settings">("profile");
   const [isPptLoaded, setIsPptLoaded] = useState(false);
   const [eventNameDialogOpen, setEventNameDialogOpen] = useState(false);
 
@@ -248,8 +249,15 @@ export function PresentationWorkspace() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-bg-base text-text-primary">
       <WorkspaceHeader
-        onSettingsOpen={() => setSettingsOpen(true)}
         onNewEvent={handleNewEvent}
+        onProfileOpen={() => {
+          setSheetTab("profile");
+          setSheetOpen(true);
+        }}
+        onSettingsOpen={() => {
+          setSheetTab("campaign");
+          setSheetOpen(true);
+        }}
         layoutPreset={layoutPreset}
         onLayoutChange={handlePreset}
         isPptLoaded={isPptLoaded}
@@ -262,9 +270,10 @@ export function PresentationWorkspace() {
         isPending={createCampaign.isPending}
       />
 
-      <SettingsDialog
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
+      <ProfileSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        defaultTab={sheetTab}
         eventName={campaign?.name ?? ""}
         onEventNameChange={(value) => {
           if (sessionKey) {

@@ -1,5 +1,11 @@
 import type { Campaign, CreateCampaignInput, UpdateCampaignInput } from "./types";
 
+export async function getCampaigns(): Promise<Campaign[]> {
+  const res = await fetch("/api/campaigns");
+  if (!res.ok) throw new Error("Failed to fetch campaigns");
+  return res.json();
+}
+
 export async function getCampaign(id: string): Promise<Campaign> {
   const res = await fetch(`/api/campaigns/${id}`);
   if (!res.ok) throw new Error("Failed to fetch campaign");
