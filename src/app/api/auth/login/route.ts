@@ -4,7 +4,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { getPendingInvitationsForEmail } from "@/lib/invitations";
 import { User } from "@/models/User";
 import { Organization } from "@/models/Organization";
-import { createSession } from "@/lib/auth";
+import { createSession, buildSessionCookie } from "@/lib/auth";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -76,12 +76,7 @@ export async function POST(request: Request) {
       pendingInvitations,
     });
 
-    response.headers.set(
-      "Set-Cookie",
-      `session=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${
-        7 * 24 * 60 * 60
-      }${process.env.NODE_ENV === "production" ? "; Secure" : ""}`
-    );
+    response.headers.set("Set-Cookie", buildSessionCookie(token));
 
     return response;
   } catch (error) {

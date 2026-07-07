@@ -1,12 +1,17 @@
-import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/User";
 import { Organization } from "@/models/Organization";
 import { createSession } from "@/lib/auth";
+import {
+  getAppUrl,
+  oauthErrorRedirect,
+  oauthSuccessRedirect,
+} from "@/lib/oauth";
 
 interface GoogleTokenResponse {
-  access_token: string;
-  id_token: string;
+  access_token?: string;
+  error?: string;
+  error_description?: string;
 }
 
 interface GoogleUserInfo {
@@ -17,7 +22,10 @@ interface GoogleUserInfo {
   verified_email: boolean;
 }
 
-async function getGoogleTokens(code: string): Promise<GoogleTokenResponse> {
+async function getGoogleTokens(
+  code: string,
+  redirectUri: string
+): Promise<GoogleTokenResponse> {
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -25,13 +33,18 @@ async function getGoogleTokens(code: string): Promise<GoogleTokenResponse> {
       code,
       client_id: process.env.GOOGLE_CLIENT_ID!,
       client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/oauth/google/callback`,
+      redirect_uri: redirectUri,
       grant_type: "authorization_code",
     }),
   });
 
-  if (!res.ok) throw new Error("Failed to exchange Google code");
-  return res.json();
+  const data = (await res.json()) as GoogleTokenResponse;
+  if (!res.ok || !data.access_token) {
+    console.error("Google token exchange failed:", data);
+    throw new Error(data.error_description || "Failed to exchange Google code");
+  }
+
+  return data;
 }
 
 async function getGoogleUserInfo(
@@ -52,30 +65,35 @@ export async function GET(request: Request) {
     const error = searchParams.get("error");
 
     if (error || !code) {
-      return NextResponse.redirect(
-        new URL("/login?error=oauth_failed", request.url)
-      );
+      return oauthErrorRedirect(request);
     }
 
-    const tokens = await getGoogleTokens(code);
-    const googleUser = await getGoogleUserInfo(tokens.access_token);
+    const redirectUri = `${getAppUrl(request)}/api/auth/oauth/google/callback`;
+    const tokens = await getGoogleTokens(code, redirectUri);
+    const googleUser = await getGoogleUserInfo(tokens.access_token!);
+
+    if (!googleUser.email) {
+      return oauthErrorRedirect(request, "oauth_no_email");
+    }
 
     await connectToDatabase();
 
     let user = await User.findOne({ "providers.google.id": googleUser.id });
 
     if (!user) {
-      user = await User.findOne({ email: googleUser.email });
+      user = await User.findOne({ email: googleUser.email.toLowerCase() });
       if (user) {
+        user.providers = user.providers || {};
         user.providers.google = {
           id: googleUser.id,
           email: googleUser.email,
         };
         if (!user.avatar) user.avatar = googleUser.picture;
+        if (!user.emailVerified) user.emailVerified = new Date();
         await user.save();
       } else {
         user = await User.create({
-          email: googleUser.email,
+          email: googleUser.email.toLowerCase(),
           name: googleUser.name,
           avatar: googleUser.picture,
           emailVerified: new Date(),
@@ -101,28 +119,15 @@ export async function GET(request: Request) {
       }
     }
 
-    const { token, session } = await createSession(
+    const { token } = await createSession(
       user._id.toString(),
       request.headers.get("user-agent") || undefined,
       request.headers.get("x-forwarded-for") || undefined
     );
 
-    const response = NextResponse.redirect(
-      new URL("/dashboard", request.url)
-    );
-
-    response.headers.set(
-      "Set-Cookie",
-      `session=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${
-        7 * 24 * 60 * 60
-      }${process.env.NODE_ENV === "production" ? "; Secure" : ""}`
-    );
-
-    return response;
+    return oauthSuccessRedirect(request, token);
   } catch (error) {
     console.error("Google OAuth error:", error);
-    return NextResponse.redirect(
-      new URL("/login?error=oauth_failed", request.url)
-    );
+    return oauthErrorRedirect(request);
   }
 }

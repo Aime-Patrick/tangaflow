@@ -11,6 +11,9 @@ export function useLogout() {
   return useMutation({
     mutationFn: clearAuth,
     onSuccess: async () => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("tangaflow-session-key");
+      }
       queryClient.setQueryData(authKeys.session(), null);
       await queryClient.invalidateQueries({ queryKey: authKeys.session() });
       router.push("/");

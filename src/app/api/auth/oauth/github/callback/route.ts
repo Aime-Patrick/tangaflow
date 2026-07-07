@@ -1,20 +1,23 @@
-import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/User";
 import { Organization } from "@/models/Organization";
 import { createSession } from "@/lib/auth";
+import {
+  oauthErrorRedirect,
+  oauthSuccessRedirect,
+} from "@/lib/oauth";
 
 interface GitHubTokenResponse {
-  access_token: string;
-  token_type: string;
-  scope: string;
+  access_token?: string;
+  error?: string;
+  error_description?: string;
 }
 
 interface GitHubUser {
   id: number;
   login: string;
-  email: string;
-  name: string;
+  email: string | null;
+  name: string | null;
   avatar_url: string;
 }
 
@@ -38,8 +41,13 @@ async function getGitHubTokens(code: string): Promise<GitHubTokenResponse> {
     }),
   });
 
-  if (!res.ok) throw new Error("Failed to exchange GitHub code");
-  return res.json();
+  const data = (await res.json()) as GitHubTokenResponse;
+  if (!res.ok || !data.access_token) {
+    console.error("GitHub token exchange failed:", data);
+    throw new Error(data.error_description || "Failed to exchange GitHub code");
+  }
+
+  return data;
 }
 
 async function getGitHubUser(accessToken: string): Promise<GitHubUser> {
@@ -73,55 +81,63 @@ export async function GET(request: Request) {
     const error = searchParams.get("error");
 
     if (error || !code) {
-      return NextResponse.redirect(
-        new URL("/login?error=oauth_failed", request.url)
-      );
+      return oauthErrorRedirect(request);
     }
 
     const tokens = await getGitHubTokens(code);
-    const githubUser = await getGitHubUser(tokens.access_token);
+    const githubUser = await getGitHubUser(tokens.access_token!);
 
     let email = githubUser.email;
     if (!email) {
-      const emails = await getGitHubEmails(tokens.access_token);
+      const emails = await getGitHubEmails(tokens.access_token!);
       const primary = emails.find((e) => e.primary && e.verified);
-      email = primary?.email || emails[0]?.email || "";
+      email = primary?.email || emails.find((e) => e.verified)?.email || "";
     }
+
+    if (!email) {
+      return oauthErrorRedirect(request, "oauth_no_email");
+    }
+
+    const githubId = githubUser.id.toString();
 
     await connectToDatabase();
 
-    let user = await User.findOne({ "providers.github.id": githubUser.id });
+    let user = await User.findOne({ "providers.github.id": githubId });
 
     if (!user) {
-      user = await User.findOne({ email });
+      user = await User.findOne({ email: email.toLowerCase() });
       if (user) {
+        user.providers = user.providers || {};
         user.providers.github = {
-          id: githubUser.id.toString(),
+          id: githubId,
           email,
         };
         if (!user.avatar) user.avatar = githubUser.avatar_url;
+        if (!user.emailVerified) user.emailVerified = new Date();
         await user.save();
       } else {
+        const displayName = githubUser.name || githubUser.login;
+
         user = await User.create({
-          email,
-          name: githubUser.name || githubUser.login,
+          email: email.toLowerCase(),
+          name: displayName,
           avatar: githubUser.avatar_url,
           emailVerified: new Date(),
           providers: {
             github: {
-              id: githubUser.id.toString(),
+              id: githubId,
               email,
             },
           },
         });
 
-        const slug = (githubUser.name || githubUser.login)
+        const slug = displayName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-|-$/g, "");
 
         await Organization.create({
-          name: `${githubUser.name || githubUser.login}'s Org`,
+          name: `${displayName}'s Org`,
           slug: `${slug}-${Date.now()}`,
           ownerId: user._id,
           members: [{ userId: user._id, role: "owner" }],
@@ -129,28 +145,15 @@ export async function GET(request: Request) {
       }
     }
 
-    const { token, session } = await createSession(
+    const { token } = await createSession(
       user._id.toString(),
       request.headers.get("user-agent") || undefined,
       request.headers.get("x-forwarded-for") || undefined
     );
 
-    const response = NextResponse.redirect(
-      new URL("/dashboard", request.url)
-    );
-
-    response.headers.set(
-      "Set-Cookie",
-      `session=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${
-        7 * 24 * 60 * 60
-      }${process.env.NODE_ENV === "production" ? "; Secure" : ""}`
-    );
-
-    return response;
+    return oauthSuccessRedirect(request, token);
   } catch (error) {
     console.error("GitHub OAuth error:", error);
-    return NextResponse.redirect(
-      new URL("/login?error=oauth_failed", request.url)
-    );
+    return oauthErrorRedirect(request);
   }
 }

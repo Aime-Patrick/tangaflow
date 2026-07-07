@@ -6,9 +6,20 @@ export async function getCampaigns(): Promise<Campaign[]> {
   return res.json();
 }
 
+export class CampaignRequestError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "CampaignRequestError";
+    this.status = status;
+  }
+}
+
 export async function getCampaign(id: string): Promise<Campaign> {
   const res = await fetch(`/api/campaigns/${id}`);
-  if (!res.ok) throw new Error("Failed to fetch campaign");
+  if (!res.ok) {
+    throw new CampaignRequestError(res.status, "Failed to fetch campaign");
+  }
   return res.json();
 }
 

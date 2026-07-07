@@ -82,6 +82,12 @@ export async function createSession(
   };
 }
 
+export function buildSessionCookie(token: string): string {
+  return `session=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${
+    7 * 24 * 60 * 60
+  }${process.env.NODE_ENV === "production" ? "; Secure" : ""}`;
+}
+
 export async function setSessionCookie(
   token: string,
   expiresAt: Date

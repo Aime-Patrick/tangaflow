@@ -1,7 +1,9 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { useLogin, useRegister } from "@/features/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,6 +92,16 @@ function LoginForm({ onNavigate }: { onNavigate: (view: AuthView) => void }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const loginMutation = useLogin();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error === "oauth_failed") {
+      toast.error("Google or GitHub sign-in failed. Please try again.");
+    } else if (error === "oauth_no_email") {
+      toast.error("Your account email is not available from the provider.");
+    }
+  }, [searchParams]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

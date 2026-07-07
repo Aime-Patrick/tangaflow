@@ -7,8 +7,10 @@ import { PresentationPlayer } from "./PresentationPlayer";
 import { QRCodeDisplay } from "./QRCodeDisplay";
 import { ProfileSheet } from "./ProfileSheet";
 import { EventNameDialog } from "./EventNameDialog";
-import { useCampaign, useCreateCampaign, useUpdateCampaign } from "@/features/campaign";
+import { useCampaign, useCreateCampaign, useUpdateCampaign, CampaignRequestError } from "@/features/campaign";
 import { debounce, formatDate } from "@/lib/utils";
+
+const SESSION_KEY_STORAGE = "tangaflow-session-key";
 
 type LayoutPreset = "default" | "focus" | null;
 
@@ -19,7 +21,7 @@ const PRESETS: Record<string, number> = {
 
 function getSessionKey(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("tangaflow-session-key");
+  return localStorage.getItem(SESSION_KEY_STORAGE);
 }
 
 interface FundraisingData {
@@ -40,9 +42,23 @@ export function PresentationWorkspace() {
 
   const [sessionKey, setSessionKeyState] = useState<string | null>(getSessionKey);
 
-  const { data: campaign, isLoading: campaignLoading } = useCampaign({
+  const { data: campaign, isLoading: campaignLoading, error: campaignError } = useCampaign({
     id: sessionKey,
   });
+
+  // Clear a stale/invalid session key (e.g. campaign deleted or owned by another
+  // account) so the event-name dialog can appear again on the next upload.
+  useEffect(() => {
+    if (!sessionKey || !campaignError) return;
+    const status =
+      campaignError instanceof CampaignRequestError ? campaignError.status : 0;
+    if (status === 404 || status === 403) {
+      localStorage.removeItem(SESSION_KEY_STORAGE);
+      setSessionKeyState(null);
+      setFundraising(null);
+      if (isPptLoaded) setEventNameDialogOpen(true);
+    }
+  }, [sessionKey, campaignError, isPptLoaded]);
 
   const codeType = campaign?.barcodeType ?? "qr";
 
@@ -180,7 +196,7 @@ export function PresentationWorkspace() {
   }, [sessionKey]);
 
   const handleNewEvent = useCallback(() => {
-    localStorage.removeItem("tangaflow-session-key");
+    localStorage.removeItem(SESSION_KEY_STORAGE);
     setSessionKeyState(null);
     setFundraising(null);
     setEventNameDialogOpen(true);
@@ -196,7 +212,7 @@ export function PresentationWorkspace() {
 
   useEffect(() => {
     if (createCampaign.isSuccess && createCampaign.data) {
-      localStorage.setItem("tangaflow-session-key", createCampaign.data._id);
+      localStorage.setItem(SESSION_KEY_STORAGE, createCampaign.data._id);
       setSessionKeyState(createCampaign.data._id);
       setEventNameDialogOpen(false);
       createCampaign.reset();
