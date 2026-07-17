@@ -25,7 +25,8 @@ export function OrgCampaignsList() {
         Organization campaigns
       </h3>
       <p className="mb-4 text-xs text-text-muted">
-        All campaigns created by members in your workspace.
+        All campaigns in your workspace. Open one uploaded from the phone remote
+        to show it on this display.
       </p>
 
       {isLoading ? (

@@ -13,15 +13,19 @@ type CodeType = "qr" | "zerocode";
 interface QRCodeDisplayProps {
   content: string;
   raisedAmount?: number;
+  targetAmount?: number;
   currency?: string;
   codeType?: CodeType;
+  eventName?: string;
 }
 
 export function QRCodeDisplay({
   content,
   raisedAmount = 0,
+  targetAmount,
   currency = "USD",
   codeType = "qr",
+  eventName,
 }: QRCodeDisplayProps) {
   const theme = useUIStore((s) => s.theme);
   const bgColor = theme === "dark" ? "#000000" : "#FFFFFF";

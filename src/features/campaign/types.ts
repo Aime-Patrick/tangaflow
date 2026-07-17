@@ -5,6 +5,7 @@ export interface Campaign {
   raisedAmount: number;
   currency: string;
   checkoutUrl: string;
+  pptxUrl: string;
   barcodeType: "qr" | "zerocode";
   organizationId: string;
   createdBy: string | { _id: string; name: string; email: string };
@@ -23,4 +24,8 @@ export interface UpdateCampaignInput {
   targetAmount?: number;
   currency?: string;
   barcodeType?: "qr" | "zerocode";
+  pptxUrl?: string;
+  totalSlides?: number;
+  currentSlide?: number;
+  isPlaying?: boolean;
 }

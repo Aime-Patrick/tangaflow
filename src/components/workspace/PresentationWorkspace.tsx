@@ -8,6 +8,7 @@ import { QRCodeDisplay } from "./QRCodeDisplay";
 import { ProfileSheet } from "./ProfileSheet";
 import { EventNameDialog } from "./EventNameDialog";
 import { useCampaign, useCreateCampaign, useUpdateCampaign, CampaignRequestError } from "@/features/campaign";
+import { useFundraising } from "@/features/fundraising";
 import { debounce, formatDate } from "@/lib/utils";
 
 const SESSION_KEY_STORAGE = "tangaflow-session-key";
@@ -22,13 +23,6 @@ const PRESETS: Record<string, number> = {
 function getSessionKey(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(SESSION_KEY_STORAGE);
-}
-
-interface FundraisingData {
-  targetAmount: number;
-  raisedAmount: number;
-  currency: string;
-  name: string;
 }
 
 export function PresentationWorkspace() {
@@ -55,7 +49,6 @@ export function PresentationWorkspace() {
     if (status === 404 || status === 403) {
       localStorage.removeItem(SESSION_KEY_STORAGE);
       setSessionKeyState(null);
-      setFundraising(null);
       if (isPptLoaded) setEventNameDialogOpen(true);
     }
   }, [sessionKey, campaignError, isPptLoaded]);
@@ -65,28 +58,7 @@ export function PresentationWorkspace() {
   const createCampaign = useCreateCampaign();
   const updateCampaign = useUpdateCampaign({ campaignId: sessionKey ?? "" });
 
-  // Poll fundraising data every 5 seconds
-  const [fundraising, setFundraising] = useState<FundraisingData | null>(null);
-
-  useEffect(() => {
-    if (!sessionKey) return;
-
-    const fetchFundraising = async () => {
-      try {
-        const res = await fetch(`/api/fundraising?campaignId=${sessionKey}`);
-        if (res.ok) {
-          const data = await res.json();
-          setFundraising(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch fundraising data:", err);
-      }
-    };
-
-    fetchFundraising();
-    const interval = setInterval(fetchFundraising, 5000);
-    return () => clearInterval(interval);
-  }, [sessionKey]);
+  const { data: fundraising } = useFundraising({ campaignId: sessionKey });
 
   const [layoutPreset, setLayoutPreset] = useState<LayoutPreset>(() => {
     if (typeof window !== "undefined") {
@@ -195,10 +167,46 @@ export function PresentationWorkspace() {
     }
   }, [sessionKey]);
 
+  const handleSlideCountChange = useCallback(
+    (count: number) => {
+      if (!sessionKey || count <= 0) return;
+      // Persist so the phone remote knows the deck size
+      updateCampaign.mutate({ totalSlides: count });
+    },
+    [sessionKey, updateCampaign]
+  );
+
+  // Follow remote control + fundraising from the phone (and other clients)
+  useEffect(() => {
+    if (!sessionKey) return;
+
+    const es = new EventSource(`/api/campaigns/${sessionKey}/events`);
+
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as {
+          type?: string;
+          currentSlide?: number;
+          isPlaying?: boolean;
+          totalSlides?: number;
+        };
+        if (typeof data.currentSlide === "number") {
+          setActiveSlideIndex(data.currentSlide);
+        }
+        if (typeof data.isPlaying === "boolean") {
+          setIsPlaying(data.isPlaying);
+        }
+      } catch {
+        // ignore malformed SSE
+      }
+    };
+
+    return () => es.close();
+  }, [sessionKey]);
+
   const handleNewEvent = useCallback(() => {
     localStorage.removeItem(SESSION_KEY_STORAGE);
     setSessionKeyState(null);
-    setFundraising(null);
     setEventNameDialogOpen(true);
   }, []);
 
@@ -257,7 +265,7 @@ export function PresentationWorkspace() {
   // Polar Checkout URL from campaign
   const polarCheckoutUrl = campaign?.checkoutUrl || "";
 
-  const showPanels = sessionKey !== null && isPptLoaded && !campaignLoading;
+  const showPanels = sessionKey !== null && !campaignLoading && (isPptLoaded || !!campaign);
   const raisedAmount = fundraising?.raisedAmount ?? campaign?.raisedAmount ?? 0;
   const targetAmount = fundraising?.targetAmount ?? campaign?.targetAmount ?? 10000;
   const currency = fundraising?.currency ?? campaign?.currency ?? "USD";
@@ -328,7 +336,9 @@ export function PresentationWorkspace() {
               raisedAmount={raisedAmount}
               targetAmount={targetAmount}
               currency={currency}
+              pptxUrl={campaign?.pptxUrl}
               onLoadedChange={handlePptLoaded}
+              onSlideCountChange={handleSlideCountChange}
             />
           </motion.div>
 
@@ -361,8 +371,10 @@ export function PresentationWorkspace() {
                 <QRCodeDisplay
                   content={polarCheckoutUrl}
                   raisedAmount={raisedAmount}
+                  targetAmount={targetAmount}
                   currency={currency}
                   codeType={codeType}
+                  eventName={campaign?.name}
                 />
               </motion.div>
             )}

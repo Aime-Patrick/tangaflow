@@ -55,7 +55,6 @@ const InvitationSchema = new Schema<IInvitation>(
 );
 
 InvitationSchema.index({ email: 1, organizationId: 1 });
-InvitationSchema.index({ token: 1 });
 InvitationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export const Invitation =

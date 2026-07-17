@@ -7,8 +7,13 @@ export interface ICampaign {
   raisedAmount: number;
   currency: string;
   checkoutUrl: string;
+  pptxUrl: string;
+  slideImages: string[];
   organizationId: mongoose.Types.ObjectId;
   createdBy: mongoose.Types.ObjectId;
+  currentSlide: number;
+  totalSlides: number;
+  isPlaying: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,6 +48,28 @@ const CampaignSchema = new Schema(
     checkoutUrl: {
       type: String,
       default: "",
+    },
+    pptxUrl: {
+      type: String,
+      default: "",
+    },
+    slideImages: {
+      type: [String],
+      default: [],
+    },
+    currentSlide: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalSlides: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    isPlaying: {
+      type: Boolean,
+      default: false,
     },
     organizationId: {
       type: Schema.Types.ObjectId,

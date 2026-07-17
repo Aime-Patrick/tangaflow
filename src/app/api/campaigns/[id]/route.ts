@@ -10,6 +10,12 @@ const updateCampaignSchema = z.object({
   targetAmount: z.number().min(1, "Target amount must be at least $1").optional(),
   currency: z.enum(["USD", "EUR", "GBP", "JPY", "KRW", "INR", "BRL", "RWF", "NGN", "ZAR", "KES", "GHS"]).optional(),
   barcodeType: z.enum(["qr", "zerocode"]).optional(),
+  pptxUrl: z.string().optional(),
+  slideImages: z.array(z.string()).optional(),
+  currentSlide: z.number().min(0).optional(),
+  totalSlides: z.number().min(0).optional(),
+  isPlaying: z.boolean().optional(),
+  checkoutUrl: z.string().optional(),
 });
 
 export async function GET(
@@ -110,6 +116,14 @@ export async function PATCH(
       new: true,
       runValidators: true,
     }).lean();
+
+    // Broadcast campaign update to SSE listeners
+    const { broadcastCampaignUpdate } = await import("@/lib/sse-broadcast");
+    broadcastCampaignUpdate(id, {
+      type: "campaign_updated",
+      campaignId: id,
+      ...updates,
+    });
 
     return NextResponse.json(campaign);
   } catch (error) {

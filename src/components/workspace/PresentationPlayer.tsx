@@ -36,7 +36,9 @@ interface PresentationPlayerProps {
   raisedAmount: number;
   targetAmount: number;
   currency?: string;
+  pptxUrl?: string;
   onLoadedChange?: (loaded: boolean) => void;
+  onSlideCountChange?: (count: number) => void;
 }
 
 export function PresentationPlayer({
@@ -49,7 +51,9 @@ export function PresentationPlayer({
   raisedAmount,
   targetAmount,
   currency = "USD",
+  pptxUrl,
   onLoadedChange,
+  onSlideCountChange,
 }: PresentationPlayerProps) {
   const [view, setView] = useState<"empty" | "loading" | "loaded">("empty");
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -73,6 +77,39 @@ export function PresentationPlayer({
     return () => cancelAnimationFrame(handle);
   }, []);
 
+  // Auto-load PPTX from campaign URL on mount
+  useEffect(() => {
+    if (!pptxUrl || view !== "empty") return;
+
+    const loadFromUrl = async () => {
+      setView("loading");
+      setUploadProgress(0);
+      try {
+        toast.info("Loading presentation from cloud...");
+        setUploadProgress(20);
+        const buffer = await loadPPTXFromCloud(pptxUrl);
+        if (!buffer) {
+          toast.error("Failed to load presentation from cloud.");
+          setView("empty");
+          return;
+        }
+        setUploadProgress(50);
+        const fileName = pptxUrl.split("/").pop() || "presentation.pptx";
+        const file = new File([buffer], fileName, {
+          type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        });
+        await processPPTX(file, true);
+        setUploadProgress(100);
+        toast.success("Presentation loaded successfully.");
+      } catch {
+        toast.error("Failed to load presentation from cloud.");
+        setView("empty");
+      }
+    };
+
+    loadFromUrl();
+  }, [pptxUrl]);
+
   useEffect(() => {
     onLoadedChange?.(view === "loaded");
   }, [view, onLoadedChange]);
@@ -92,9 +129,15 @@ export function PresentationPlayer({
   // Navigate slides
   useEffect(() => {
     if (view === "loaded" && viewerRef.current) {
-      viewerRef.current.goToSlide(activeSlideIndex);
+      const max = Math.max(0, pptxSlideCount - 1);
+      const clamped = Math.max(0, Math.min(activeSlideIndex, max || activeSlideIndex));
+      if (clamped !== activeSlideIndex) {
+        setActiveSlideIndex(clamped);
+        return;
+      }
+      viewerRef.current.goToSlide(clamped);
     }
-  }, [activeSlideIndex, view]);
+  }, [activeSlideIndex, view, pptxSlideCount, setActiveSlideIndex]);
 
   const handleNext = () => {
     if (activeSlideIndex < pptxSlideCount - 1)
@@ -309,6 +352,7 @@ export function PresentationPlayer({
 
       viewerRef.current = viewer;
       setPptxSlideCount(viewer.slideCount);
+      onSlideCountChange?.(viewer.slideCount);
       setActiveSlideIndex(0);
       await new Promise((r) => setTimeout(r, 200));
       setUploadProgress(100);

@@ -17,6 +17,11 @@ const createCampaignSchema = z.object({
   name: z.string().min(1, "Name is required").trim(),
   targetAmount: z.number().min(1, "Target amount must be at least $1"),
   currency: z.enum(["USD", "EUR", "GBP", "JPY", "KRW", "INR", "BRL", "RWF", "NGN", "ZAR", "KES", "GHS"]).default("USD"),
+  pptxUrl: z.string().optional(),
+  slideImages: z.array(z.string()).optional(),
+  currentSlide: z.number().min(0).optional(),
+  totalSlides: z.number().min(0).optional(),
+  isPlaying: z.boolean().optional(),
 });
 
 function generateSessionKey(): string {
@@ -112,7 +117,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, targetAmount, currency } = parsed.data;
+    const { name, targetAmount, currency, pptxUrl, slideImages, currentSlide, totalSlides, isPlaying } = parsed.data;
     const sessionKey = generateSessionKey();
 
     const checkoutUrl = await createPolarCheckoutSession(sessionKey, currency);
@@ -124,6 +129,11 @@ export async function POST(request: Request) {
       raisedAmount: 0,
       currency,
       checkoutUrl: checkoutUrl || "",
+      pptxUrl: pptxUrl || "",
+      slideImages: slideImages || [],
+      currentSlide: currentSlide ?? 0,
+      totalSlides: totalSlides ?? 0,
+      isPlaying: isPlaying ?? false,
       organizationId: auth.organization._id,
       createdBy: auth.user._id,
     });

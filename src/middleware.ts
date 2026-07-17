@@ -6,7 +6,21 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "your-secret-key-change-in-production"
 );
 
-const publicPaths = ["/", "/forgot-password", "/reset-password", "/invite", "/api/auth", "/api/invitations"];
+const publicPaths = [
+  "/",
+  "/forgot-password",
+  "/reset-password",
+  "/invite",
+  "/viewer",
+  "/api/auth",
+  "/api/invitations",
+  "/api/campaigns",
+  // Device API key / Polar signature auth — must bypass session cookie
+  "/api/webhooks",
+  "/api/polar",
+  // Public fundraising progress for viewer / remote displays
+  "/api/fundraising",
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Presentation Viewer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: system-ui, sans-serif; }
+
+    #debug { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #111; color: #888; font: 10px monospace; padding: 2px 8px; }
+    #progress-bar { padding: 4px 16px 6px; background: #000; }
+    #progress-bar .row { display: flex; justify-content: space-between; color: #fff; font-size: 13px; font-weight: bold; margin-bottom: 3px; }
+    #progress-bar .track { height: 3px; background: #333; border-radius: 2px; overflow: hidden; }
+    #progress-bar .fill { height: 100%; background: #eab308; transition: width 1s; border-radius: 2px; }
+
+    #viewport { position: absolute; top: 0; left: 0; right: 0; bottom: 32px; overflow: hidden; }
+    #viewport #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; }
+    #viewport #loading .spinner { width: 32px; height: 32px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; margin-bottom: 12px; }
+    #viewport #loading .label { font-size: 13px; opacity: .7; }
+    #viewport #error { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; color: #f87171; font-size: 13px; padding: 16px; text-align: center; }
+    #viewport #viewer-container { width: 100%; height: 100%; }
+
+    #slide-counter { position: fixed; bottom: 0; left: 0; right: 0; height: 32px; background: #000; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.6); font-size: 12px; }
+
+    #live-badge { position: fixed; top: 12px; right: 12px; z-index: 50; display: none; background: #16a34a; padding: 3px 8px; border-radius: 4px; }
+    #live-badge .dot { display: inline-block; width: 6px; height: 6px; background: #fff; border-radius: 50%; margin-right: 5px; animation: pulse 1.5s infinite; }
+    #live-badge span { color: #fff; font-size: 10px; font-weight: bold; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+  </style>
+</head>
+<body>
+  <div id="debug">initializing...</div>
+  <div id="progress-bar" style="display:none">
+    <div class="row">
+      <span id="raised">USD 0</span>
+      <span id="target" style="opacity:.6">Target: USD 0</span>
+    </div>
+    <div class="track"><div class="fill" id="fill" style="width:0%"></div></div>
+  </div>
+  <div id="viewport">
+    <div id="loading"><div class="spinner"></div><div class="label">Loading presentation...</div></div>
+    <div id="error"></div>
+    <div id="viewer-container"></div>
+  </div>
+  <div id="live-badge"><div class="dot"></div><span>LIVE</span></div>
+  <div id="slide-counter">Slide 1 / 0</div>
+
+    <script src="/pptx-renderer.bundle.js"></script>
+    <script type="module">
+    const $ = (s) => document.querySelector(s);
+    const params = new URLSearchParams(window.location.search);
+    const campaignId = params.get("campaignId");
+    const pptxUrl = params.get("pptxUrl");
+
+    const debugEl = $("#debug");
+    const loadingEl = $("#loading");
+    const errorEl = $("#error");
+    const containerEl = $("#viewer-container");
+    const counterEl = $("#slide-counter");
+    const progressEl = $("#progress-bar");
+    const liveBadge = $("#live-badge");
+    const raisedEl = $("#raised");
+    const targetEl = $("#target");
+    const fillEl = $("#fill");
+
+    let currentSlide = 0;
+    let totalSlides = 0;
+    let isPlaying = false;
+    let viewer = null;
+
+    function setDebug(msg) { debugEl.textContent = msg; }
+    function setError(msg) { errorEl.style.display = "flex"; errorEl.textContent = msg; loadingEl.style.display = "none"; }
+    function setDone() { loadingEl.style.display = "none"; }
+
+    function fmtCurrency(a, c) { return c + " " + a.toLocaleString(); }
+    function updateProgress(raised, target, cur) {
+      progressEl.style.display = "block";
+      raisedEl.textContent = fmtCurrency(raised, cur);
+      targetEl.textContent = "Target: " + fmtCurrency(target, cur);
+      fillEl.style.width = (target > 0 ? Math.min(100, (raised / target) * 100) : 0) + "%";
+    }
+    function updateCounter() { counterEl.textContent = "Slide " + (currentSlide + 1) + " / " + totalSlides; }
+    function updateLive() { liveBadge.style.display = isPlaying ? "block" : "none"; }
+
+    if (!pptxUrl) { setError("No pptxUrl provided"); setDebug("ERROR: no pptxUrl"); throw new Error("no pptxUrl"); }
+    if (!campaignId) { setError("No campaignId provided"); setDebug("ERROR: no campaignId"); throw new Error("no campaignId"); }
+
+    setDebug("fetching PPTX...");
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000);
+      const res = await fetch(pptxUrl, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!res.ok) { setError("Download failed (" + res.status + ")"); throw new Error("HTTP " + res.status); }
+
+      const buffer = await res.arrayBuffer();
+      setDebug("downloaded " + buffer.byteLength + " bytes, importing renderer...");
+
+      if (buffer.byteLength === 0) { setError("File is empty"); throw new Error("empty"); }
+
+      setDebug("importing renderer...");
+      const { PptxViewer, RECOMMENDED_ZIP_LIMITS } = PptxRenderer;
+
+      setDebug("rendering slides...");
+      viewer = new PptxViewer(containerEl, {
+        fitMode: "contain",
+        zipLimits: RECOMMENDED_ZIP_LIMITS,
+        lazySlides: true,
+        lazyMedia: true,
+        onSlideChange: (index) => {
+          currentSlide = index;
+          updateCounter();
+        },
+      });
+
+      await viewer.open(buffer, { renderMode: "slide", lazySlides: true, lazyMedia: true });
+      totalSlides = viewer.slideCount;
+      updateCounter();
+      setDone();
+      setDebug("ready | " + totalSlides + " slides");
+    } catch (err) {
+      console.error("[Viewer]", err);
+      if (!errorEl.textContent) setError("Failed: " + (err.message || "Unknown"));
+      setDebug("ERROR: " + (err.message || "unknown"));
+    }
+
+    // SSE for live updates
+    const sseUrl = window.location.origin + "/api/campaigns/" + campaignId + "/events";
+    const es = new EventSource(sseUrl);
+    es.onmessage = (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        if (d.type === "connected" || d.type === "slide_changed" || d.type === "playback_changed") {
+          if (d.currentSlide !== undefined) { currentSlide = d.currentSlide; if (viewer) viewer.goToSlide(currentSlide); }
+          if (d.totalSlides !== undefined) totalSlides = d.totalSlides;
+          if (d.isPlaying !== undefined) { isPlaying = d.isPlaying; updateLive(); }
+          updateCounter();
+        }
+        if (d.type === "fundraising_updated" || d.type === "connected") {
+          if (d.raisedAmount !== undefined) updateProgress(d.raisedAmount, d.targetAmount || 0, d.currency || "USD");
+        }
+      } catch {}
+    };
+
+    // Autoplay
+    setInterval(() => {
+      if (isPlaying && totalSlides > 0) {
+        currentSlide = (currentSlide + 1) % totalSlides;
+        if (viewer) viewer.goToSlide(currentSlide);
+        updateCounter();
+      }
+    }, 5000);
+  </script>
+</body>
+</html>

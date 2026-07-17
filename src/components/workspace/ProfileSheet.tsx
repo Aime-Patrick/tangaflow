@@ -36,6 +36,7 @@ import { useLogout } from "@/features/auth";
 import { useUIStore } from "@/stores/uiStore";
 import { MembersTab } from "./MembersTab";
 import { OrgCampaignsList } from "./OrgCampaignsList";
+import { DevicesTab } from "./DevicesTab";
 
 const CURRENCIES = [
   { code: "USD", name: "US Dollar", symbol: "$" },
@@ -429,6 +430,9 @@ function ThemeButton({
 function SettingsContent({ onChangePassword, onDeleteAccount }: { onChangePassword: () => void; onDeleteAccount: () => void }) {
   return (
     <div className="space-y-6">
+      {/* MoMo Devices */}
+      <DevicesTab />
+
       {/* Appearance */}
       <div className="rounded-md border border-border-subtle p-6">
         <h3 className="mb-4 text-sm font-medium text-text-primary">
